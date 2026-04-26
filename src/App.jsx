@@ -28,6 +28,8 @@ function App() {
 }
 
 function EntryPage() {
+  const navigate = useNavigate();
+  
   return (
     <div className="login-page">
       <div className="login-card">
@@ -37,7 +39,7 @@ function EntryPage() {
         </div>
         <div style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem' }}>
           <button 
-            onClick={() => alert('CLICK WORKS')} 
+            onClick={() => navigate('/login?role=admin')} 
             style={{ 
               width: '100%', 
               padding: '0.875rem', 
@@ -53,7 +55,7 @@ function EntryPage() {
             Admin Login
           </button>
           <button 
-            onClick={() => alert('CLICK WORKS')} 
+            onClick={() => navigate('/login?role=student')} 
             style={{ 
               width: '100%', 
               padding: '0.875rem', 
