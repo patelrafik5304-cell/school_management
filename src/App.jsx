@@ -70,16 +70,17 @@ function LoginPage() {
       setError('Please enter username and password')
       return
     }
+    setError('')
+    
     if (role === 'admin') {
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      if (username.toLowerCase() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         localStorage.setItem('userRole', 'admin')
         navigate('/admin')
       } else {
-        setError('Invalid credentials for admin')
+        setError('Invalid admin credentials')
       }
     } else {
       setLoading(true)
-      setError('')
       try {
         const student = await db.loginStudent(username, password)
         localStorage.setItem('studentId', student.id)
@@ -88,7 +89,8 @@ function LoginPage() {
         localStorage.setItem('userRole', 'student')
         navigate('/student')
       } catch (e) {
-        setError('Invalid credentials')
+        console.error('Login error:', e)
+        setError('Invalid username or password')
       } finally {
         setLoading(false)
       }
