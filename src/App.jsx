@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom'
 import './index.css'
+
+const API_URL = '';
 
 function App() {
   return (
@@ -140,6 +142,40 @@ function LoginPage() {
 }
 
 function AdminDashboard() {
+  const [stats, setStats] = useState({ students: 0, staff: 0, announcements: 0, attendance: 0 })
+  const [announcements, setAnnouncements] = useState([])
+
+  useEffect(() => {
+    fetchStudentsCount()
+    fetchStaffCount()
+    fetchAnnouncements()
+  }, [])
+
+  const fetchStudentsCount = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/students`)
+      const data = await res.json()
+      setStats(prev => ({ ...prev, students: data.length }))
+    } catch (e) { console.error(e) }
+  }
+
+  const fetchStaffCount = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/staff`)
+      const data = await res.json()
+      setStats(prev => ({ ...prev, staff: data.length }))
+    } catch (e) { console.error(e) }
+  }
+
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/announcements`)
+      const data = await res.json()
+      setAnnouncements(data.slice(0, 3))
+      setStats(prev => ({ ...prev, announcements: data.length }))
+    } catch (e) { console.error(e) }
+  }
+
   return (
     <div className="app">
       <nav className="navbar">
@@ -161,35 +197,36 @@ function AdminDashboard() {
         </div>
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-value">150</div>
+            <div className="stat-value">{stats.students}</div>
             <div className="stat-label">Total Students</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">12</div>
+            <div className="stat-value">{stats.staff}</div>
             <div className="stat-label">Total Staff</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">95%</div>
-            <div className="stat-label">Today's Attendance</div>
+            <div className="stat-value">{stats.attendance}%</div>
+            <div className="stat-label">Attendance</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">3</div>
-            <div className="stat-label">New Announcements</div>
+            <div className="stat-value">{stats.announcements}</div>
+            <div className="stat-label">Announcements</div>
           </div>
         </div>
         <div className="grid grid-2" style={{ marginTop: '2rem' }}>
           <div className="card">
             <h3 className="card-header">Recent Announcements</h3>
-            <div className="announcement-card">
-              <div className="announcement-date">April 25, 2026</div>
-              <div className="announcement-title">School will remain closed tomorrow</div>
-              <p>Due to heavy rainfall, school will remain closed tomorrow.</p>
-            </div>
-            <div className="announcement-card">
-              <div className="announcement-date">April 24, 2026</div>
-              <div className="announcement-title">Annual Exam Schedule</div>
-              <p>Annual exams will start from May 1st, 2026.</p>
-            </div>
+            {announcements.length === 0 ? (
+              <p>No announcements yet</p>
+            ) : (
+              announcements.map(a => (
+                <div key={a._id} className="announcement-card">
+                  <div className="announcement-date">{new Date(a.date).toLocaleDateString()}</div>
+                  <div className="announcement-title">{a.title}</div>
+                  <p>{a.content}</p>
+                </div>
+              ))
+            )}
           </div>
           <div className="card">
             <h3 className="card-header">Quick Actions</h3>
@@ -207,13 +244,54 @@ function AdminDashboard() {
 }
 
 function StudentManagement() {
-  const students = [
-    { id: 1, name: 'Rahul Sharma', class: 'Class 5', roll: '01', status: 'Active' },
-    { id: 2, name: 'Priya Patel', class: 'Class 5', roll: '02', status: 'Active' },
-    { id: 3, name: 'Amit Kumar', class: 'Class 4', roll: '01', status: 'Active' },
-    { id: 4, name: 'Sita Devi', class: 'Class 4', roll: '02', status: 'Active' },
-    { id: 5, name: 'Raj Gupta', class: 'Class 3', roll: '01', status: 'Active' },
-  ]
+  const [students, setStudents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [newStudent, setNewStudent] = useState({ name: '', class: '', rollNumber: '' })
+
+  useEffect(() => {
+    fetchStudents()
+  }, [])
+
+  const fetchStudents = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/students`)
+      const data = await res.json()
+      setStudents(data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddStudent = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await fetch(`${API_URL}/api/students`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newStudent)
+      })
+      if (res.ok) {
+        fetchStudents()
+        setShowModal(false)
+        setNewStudent({ name: '', class: '', rollNumber: '' })
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this student?')) return
+    try {
+      await fetch(`${API_URL}/api/students?id=${id}`, { method: 'DELETE' })
+      fetchStudents()
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   return (
     <div className="app">
@@ -233,48 +311,129 @@ function StudentManagement() {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Student Management</h1>
-          <button className="btn btn-primary">+ Add Student</button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Add Student</button>
         </div>
         <div className="card">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Roll No.</th>
-                <th>Name</th>
-                <th>Class</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map(student => (
-                <tr key={student.id}>
-                  <td>{student.roll}</td>
-                  <td>{student.name}</td>
-                  <td>{student.class}</td>
-                  <td><span className="badge badge-success">{student.status}</span></td>
-                  <td>
-                    <button className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>Edit</button>
-                  </td>
+          {loading ? <p>Loading...</p> : students.length === 0 ? (
+            <p>No students found</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Roll No.</th>
+                  <th>Name</th>
+                  <th>Class</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {students.map(student => (
+                  <tr key={student._id}>
+                    <td>{student.rollNumber}</td>
+                    <td>{student.name}</td>
+                    <td>{student.class}</td>
+                    <td><span className="badge badge-success">{student.status || 'Active'}</span></td>
+                    <td>
+                      <button className="btn btn-danger" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }} onClick={() => handleDelete(student._id)}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
+
+        {showModal && (
+          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3 className="modal-title">Add New Student</h3>
+                <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              </div>
+              <form onSubmit={handleAddStudent}>
+                <div className="form-group">
+                  <label className="form-label">Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={newStudent.name}
+                    onChange={e => setNewStudent({ ...newStudent, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Class</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={newStudent.class}
+                    onChange={e => setNewStudent({ ...newStudent, class: e.target.value })}
+                    placeholder="Class 1"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Roll Number</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={newStudent.rollNumber}
+                    onChange={e => setNewStudent({ ...newStudent, rollNumber: e.target.value })}
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary">Add Student</button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
 function AttendanceManagement() {
+  const [students, setStudents] = useState([])
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-  const students = [
-    { id: 1, name: 'Rahul Sharma', class: 'Class 5', roll: '01', present: true },
-    { id: 2, name: 'Priya Patel', class: 'Class 5', roll: '02', present: true },
-    { id: 3, name: 'Amit Kumar', class: 'Class 4', roll: '01', present: false },
-    { id: 4, name: 'Sita Devi', class: 'Class 4', roll: '02', present: true },
-    { id: 5, name: 'Raj Gupta', class: 'Class 3', roll: '01', present: true },
-  ]
+  const [attendance, setAttendance] = useState({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchData()
+  }, [date])
+
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/students`)
+      const data = await res.json()
+      setStudents(data)
+
+      const attRes = await fetch(`${API_URL}/api/attendance?date=${date}`)
+      const attData = await attRes.json()
+      const attMap = {}
+      attData.forEach(a => { attMap[a.studentId] = a.status })
+      setAttendance(attMap)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const markAttendance = async (studentId, status) => {
+    try {
+      await fetch(`${API_URL}/api/attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, date, status })
+      })
+      setAttendance(prev => ({ ...prev, [studentId]: status }))
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   return (
     <div className="app">
@@ -306,30 +465,42 @@ function AttendanceManagement() {
               style={{ maxWidth: '200px' }}
             />
           </div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Roll No.</th>
-                <th>Name</th>
-                <th>Class</th>
-                <th>Attendance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map(student => (
-                <tr key={student.id}>
-                  <td>{student.roll}</td>
-                  <td>{student.name}</td>
-                  <td>{student.class}</td>
-                  <td>
-                    <span className={`badge ${student.present ? 'badge-success' : 'badge-danger'}`}>
-                      {student.present ? 'Present' : 'Absent'}
-                    </span>
-                  </td>
+          {loading ? <p>Loading...</p> : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Roll No.</th>
+                  <th>Name</th>
+                  <th>Class</th>
+                  <th>Attendance</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {students.map(student => (
+                  <tr key={student._id}>
+                    <td>{student.rollNumber}</td>
+                    <td>{student.name}</td>
+                    <td>{student.class}</td>
+                    <td>
+                      <button
+                        className={`btn ${attendance[student._id] === 'Present' ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ marginRight: '0.5rem' }}
+                        onClick={() => markAttendance(student._id, 'Present')}
+                      >
+                        Present
+                      </button>
+                      <button
+                        className={`btn ${attendance[student._id] === 'Absent' ? 'btn-danger' : 'btn-secondary'}`}
+                        onClick={() => markAttendance(student._id, 'Absent')}
+                      >
+                        Absent
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
@@ -337,11 +508,44 @@ function AttendanceManagement() {
 }
 
 function ResultsManagement() {
-  const results = [
-    { id: 1, name: 'Rahul Sharma', class: 'Class 5', subject: 'Mathematics', marks: 85, grade: 'A' },
-    { id: 2, name: 'Priya Patel', class: 'Class 5', subject: 'Mathematics', marks: 90, grade: 'A+' },
-    { id: 3, name: 'Amit Kumar', class: 'Class 4', subject: 'Mathematics', marks: 78, grade: 'B+' },
-  ]
+  const [results, setResults] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [newResult, setNewResult] = useState({ studentName: '', studentClass: '', subject: '', marks: '' })
+
+  useEffect(() => {
+    fetchResults()
+  }, [])
+
+  const fetchResults = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/results`)
+      const data = await res.json()
+      setResults(data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddResult = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await fetch(`${API_URL}/api/results`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newResult)
+      })
+      if (res.ok) {
+        fetchResults()
+        setShowModal(false)
+        setNewResult({ studentName: '', studentClass: '', subject: '', marks: '' })
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   return (
     <div className="app">
@@ -361,44 +565,99 @@ function ResultsManagement() {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Results Management</h1>
-          <button className="btn btn-primary">+ Add Result</button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Add Result</button>
         </div>
         <div className="card">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Student Name</th>
-                <th>Class</th>
-                <th>Subject</th>
-                <th>Marks</th>
-                <th>Grade</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map(result => (
-                <tr key={result.id}>
-                  <td>{result.name}</td>
-                  <td>{result.class}</td>
-                  <td>{result.subject}</td>
-                  <td>{result.marks}</td>
-                  <td><span className="badge badge-success">{result.grade}</span></td>
+          {loading ? <p>Loading...</p> : results.length === 0 ? (
+            <p>No results found</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Class</th>
+                  <th>Subject</th>
+                  <th>Marks</th>
+                  <th>Grade</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {results.map(result => (
+                  <tr key={result._id}>
+                    <td>{result.studentName}</td>
+                    <td>{result.studentClass}</td>
+                    <td>{result.subject}</td>
+                    <td>{result.marks}/{result.maxMarks}</td>
+                    <td><span className="badge badge-success">{getGrade(result.marks)}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
+
+        {showModal && (
+          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3 className="modal-title">Add New Result</h3>
+                <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              </div>
+              <form onSubmit={handleAddResult}>
+                <div className="form-group">
+                  <label className="form-label">Student Name</label>
+                  <input type="text" className="form-input" value={newResult.studentName} onChange={e => setNewResult({ ...newResult, studentName: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Class</label>
+                  <input type="text" className="form-input" value={newResult.studentClass} onChange={e => setNewResult({ ...newResult, studentClass: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Subject</label>
+                  <input type="text" className="form-input" value={newResult.subject} onChange={e => setNewResult({ ...newResult, subject: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Marks</label>
+                  <input type="number" className="form-input" value={newResult.marks} onChange={e => setNewResult({ ...newResult, marks: e.target.value })} required />
+                </div>
+                <button type="submit" className="btn btn-primary">Add Result</button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
+function getGrade(marks) {
+  if (marks >= 90) return 'A+'
+  if (marks >= 80) return 'A'
+  if (marks >= 70) return 'B+'
+  if (marks >= 60) return 'B'
+  if (marks >= 50) return 'C'
+  return 'D'
+}
+
 function StaffManagement() {
-  const staff = [
-    { id: 1, name: 'Mr. Ramesh Singh', role: 'Principal', experience: '15 years' },
-    { id: 2, name: 'Mrs. Sunita Devi', role: 'Mathematics Teacher', experience: '10 years' },
-    { id: 3, name: 'Mr. Ajay Kumar', role: 'English Teacher', experience: '8 years' },
-    { id: 4, name: 'Mrs. Pinki Sharma', role: 'Science Teacher', experience: '5 years' },
-  ]
+  const [staff, setStaff] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchStaff()
+  }, [])
+
+  const fetchStaff = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/staff`)
+      const data = await res.json()
+      setStaff(data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="app">
@@ -418,33 +677,79 @@ function StaffManagement() {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Staff Management</h1>
-          <button className="btn btn-primary">+ Add Staff</button>
         </div>
-        <div className="grid grid-4">
-          {staff.map(member => (
-            <div key={member.id} className="card staff-card">
-              <div className="staff-avatar">
-                {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+        {loading ? <p>Loading...</p> : staff.length === 0 ? (
+          <p>No staff found</p>
+        ) : (
+          <div className="grid grid-4">
+            {staff.map(member => (
+              <div key={member._id} className="card staff-card">
+                <div className="staff-avatar">
+                  {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                </div>
+                <div className="staff-name">{member.name}</div>
+                <div className="staff-role">{member.role}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.5rem' }}>
+                  {member.experience}
+                </div>
               </div>
-              <div className="staff-name">{member.name}</div>
-              <div className="staff-role">{member.role}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.5rem' }}>
-                {member.experience}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
 function Announcements() {
-  const announcements = [
-    { id: 1, title: 'School will remain closed tomorrow', date: 'April 25, 2026', content: 'Due to heavy rainfall, school will remain closed tomorrow.' },
-    { id: 2, title: 'Annual Exam Schedule', date: 'April 24, 2026', content: 'Annual exams will start from May 1st, 2026.' },
-    { id: 3, title: 'Parent Teacher Meeting', date: 'April 20, 2026', content: 'Parent teacher meeting will be held on April 28th, 2026.' },
-  ]
+  const [announcements, setAnnouncements] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '', priority: 'Normal' })
+
+  useEffect(() => {
+    fetchAnnouncements()
+  }, [])
+
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/announcements`)
+      const data = await res.json()
+      setAnnouncements(data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePost = async (e) => {
+    e.preventDefault()
+    try {
+      const res = await fetch(`${API_URL}/api/announcements`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAnnouncement)
+      })
+      if (res.ok) {
+        fetchAnnouncements()
+        setShowModal(false)
+        setNewAnnouncement({ title: '', content: '', priority: 'Normal' })
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this announcement?')) return
+    try {
+      await fetch(`${API_URL}/api/announcements?id=${id}`, { method: 'DELETE' })
+      fetchAnnouncements()
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   return (
     <div className="app">
@@ -464,17 +769,44 @@ function Announcements() {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Announcements</h1>
-          <button className="btn btn-primary">+ Post New</button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Post New</button>
         </div>
-        <div className="grid" style={{ gap: '1rem' }}>
-          {announcements.map(announcement => (
-            <div key={announcement.id} className="announcement-card">
-              <div className="announcement-date">{announcement.date}</div>
-              <div className="announcement-title">{announcement.title}</div>
-              <p>{announcement.content}</p>
+        {loading ? <p>Loading...</p> : announcements.length === 0 ? (
+          <p>No announcements yet</p>
+        ) : (
+          <div className="grid" style={{ gap: '1rem' }}>
+            {announcements.map(a => (
+              <div key={a._id} className="announcement-card">
+                <div className="announcement-date">{new Date(a.date).toLocaleDateString()}</div>
+                <div className="announcement-title">{a.title}</div>
+                <p>{a.content}</p>
+                <button className="btn btn-danger" style={{ marginTop: '0.5rem', padding: '0.25rem 0.5rem' }} onClick={() => handleDelete(a._id)}>Delete</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {showModal && (
+          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3 className="modal-title">Post New Announcement</h3>
+                <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              </div>
+              <form onSubmit={handlePost}>
+                <div className="form-group">
+                  <label className="form-label">Title</label>
+                  <input type="text" className="form-input" value={newAnnouncement.title} onChange={e => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Content</label>
+                  <textarea className="form-input" rows="4" value={newAnnouncement.content} onChange={e => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })} required />
+                </div>
+                <button type="submit" className="btn btn-primary">Post</button>
+              </form>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -511,15 +843,7 @@ function GalleryManagement() {
         <div className="gallery-grid">
           {images.map(image => (
             <div key={image.id} className="gallery-item">
-              <div style={{ 
-                width: '100%', 
-                height: '100%', 
-                background: 'var(--bg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--text-light)'
-              }}>
+              <div style={{ width: '100%', height: '100%', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-light)' }}>
                 {image.title}
               </div>
             </div>
@@ -592,14 +916,6 @@ function StudentDashboard() {
 }
 
 function MyAttendance() {
-  const attendance = [
-    { id: 1, date: 'April 26, 2026', status: 'Present' },
-    { id: 2, date: 'April 25, 2026', status: 'Present' },
-    { id: 3, date: 'April 24, 2026', status: 'Present' },
-    { id: 4, date: 'April 23, 2026', status: 'Absent' },
-    { id: 5, date: 'April 22, 2026', status: 'Present' },
-  ]
-
   return (
     <div className="app">
       <nav className="navbar">
@@ -631,26 +947,6 @@ function MyAttendance() {
               <div className="stat-label">Days Absent</div>
             </div>
           </div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {attendance.map(record => (
-                <tr key={record.id}>
-                  <td>{record.date}</td>
-                  <td>
-                    <span className={`badge ${record.status === 'Present' ? 'badge-success' : 'badge-danger'}`}>
-                      {record.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
@@ -658,14 +954,6 @@ function MyAttendance() {
 }
 
 function MyResults() {
-  const results = [
-    { id: 1, subject: 'Mathematics', marks: 85, grade: 'A', maxMarks: 100 },
-    { id: 2, subject: 'English', marks: 78, grade: 'B+', maxMarks: 100 },
-    { id: 3, subject: 'Science', marks: 92, grade: 'A+', maxMarks: 100 },
-    { id: 4, subject: 'Hindi', marks: 88, grade: 'A', maxMarks: 100 },
-    { id: 5, subject: 'Mathematics (Half Yearly)', marks: 90, grade: 'A+', maxMarks: 100 },
-  ]
-
   return (
     <div className="app">
       <nav className="navbar">
@@ -688,19 +976,13 @@ function MyResults() {
               <tr>
                 <th>Subject</th>
                 <th>Marks</th>
-                <th>Max Marks</th>
                 <th>Grade</th>
               </tr>
             </thead>
             <tbody>
-              {results.map(result => (
-                <tr key={result.id}>
-                  <td>{result.subject}</td>
-                  <td>{result.marks}</td>
-                  <td>{result.maxMarks}</td>
-                  <td><span className="badge badge-success">{result.grade}</span></td>
-                </tr>
-              ))}
+              <tr><td>Mathematics</td><td>85</td><td><span className="badge badge-success">A</span></td></tr>
+              <tr><td>English</td><td>78</td><td><span className="badge badge-success">B+</span></td></tr>
+              <tr><td>Science</td><td>92</td><td><span className="badge badge-success">A+</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -710,11 +992,24 @@ function MyResults() {
 }
 
 function StudentAnnouncements() {
-  const announcements = [
-    { id: 1, title: 'School will remain closed tomorrow', date: 'April 25, 2026', content: 'Due to heavy rainfall, school will remain closed tomorrow.' },
-    { id: 2, title: 'Annual Exam Schedule', date: 'April 24, 2026', content: 'Annual exams will start from May 1st, 2026.' },
-    { id: 3, title: 'Parent Teacher Meeting', date: 'April 20, 2026', content: 'Parent teacher meeting will be held on April 28th, 2026.' },
-  ]
+  const [announcements, setAnnouncements] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAnnouncements()
+  }, [])
+
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/announcements`)
+      const data = await res.json()
+      setAnnouncements(data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="app">
@@ -732,15 +1027,19 @@ function StudentAnnouncements() {
         <div className="page-header">
           <h1 className="page-title">Announcements</h1>
         </div>
-        <div className="grid" style={{ gap: '1rem' }}>
-          {announcements.map(announcement => (
-            <div key={announcement.id} className="announcement-card">
-              <div className="announcement-date">{announcement.date}</div>
-              <div className="announcement-title">{announcement.title}</div>
-              <p>{announcement.content}</p>
-            </div>
-          ))}
-        </div>
+        {loading ? <p>Loading...</p> : announcements.length === 0 ? (
+          <p>No announcements</p>
+        ) : (
+          <div className="grid" style={{ gap: '1rem' }}>
+            {announcements.map(a => (
+              <div key={a._id} className="announcement-card">
+                <div className="announcement-date">{new Date(a.date).toLocaleDateString()}</div>
+                <div className="announcement-title">{a.title}</div>
+                <p>{a.content}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
