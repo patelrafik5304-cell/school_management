@@ -900,7 +900,13 @@ function GalleryManagement() {
   const fetchImages = async () => {
     try {
       const data = await db.getAllImages()
-      setImages(data)
+      const uniqueIds = new Set()
+      const unique = data.filter(img => {
+        if (uniqueIds.has(img.id)) return false
+        uniqueIds.add(img.id)
+        return true
+      })
+      setImages(unique)
     } catch (e) {
       console.error(e)
     } finally {
