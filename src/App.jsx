@@ -174,7 +174,7 @@ function AdminDashboard() {
 
   const fetchStaffCount = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/staff`)
+      const res = await db.getAllStaff()
       const data = await res.json()
       setStats(prev => ({ ...prev, staff: data.length }))
     } catch (e) { console.error(e) }
@@ -182,7 +182,7 @@ function AdminDashboard() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/announcements`)
+      const res = await db.getAllAnnouncements()
       const data = await res.json()
       setAnnouncements(data.slice(0, 3))
       setStats(prev => ({ ...prev, announcements: data.length }))
@@ -431,7 +431,7 @@ function AttendanceManagement() {
       const data = await res.json()
       setStudents(data)
 
-      const attRes = await fetch(`${API_URL}/api/attendance?date=${date}`)
+      const attRes = await db.getAllAttendance(date)
       const attData = await attRes.json()
       const attMap = {}
       attData.forEach(a => { attMap[a.studentId] = a.status })
@@ -445,11 +445,7 @@ function AttendanceManagement() {
 
   const markAttendance = async (studentId, status) => {
     try {
-      await fetch(`${API_URL}/api/attendance`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId, date, status })
-      })
+      await db.addAttendance({ studentId, date, status })
       setAttendance(prev => ({ ...prev, [studentId]: status }))
     } catch (e) {
       console.error(e)
@@ -540,7 +536,7 @@ function ResultsManagement() {
 
   const fetchResults = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/results`)
+      const res = await db.getAllResults()
       const data = await res.json()
       setResults(data)
     } catch (e) {
@@ -553,16 +549,10 @@ function ResultsManagement() {
   const handleAddResult = async (e) => {
     e.preventDefault()
     try {
-      const res = await fetch(`${API_URL}/api/results`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newResult)
-      })
-      if (res.ok) {
-        fetchResults()
-        setShowModal(false)
-        setNewResult({ studentName: '', studentClass: '', subject: '', marks: '' })
-      }
+      await db.addResult(newResult)
+      fetchResults()
+      setShowModal(false)
+      setNewResult({ studentName: '', studentClass: '', subject: '', marks: '' })
     } catch (e) {
       console.error(e)
     }
@@ -670,7 +660,7 @@ function StaffManagement() {
 
   const fetchStaff = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/staff`)
+      const res = await db.getAllStaff()
       const data = await res.json()
       setStaff(data)
     } catch (e) {
@@ -734,7 +724,7 @@ function Announcements() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/announcements`)
+      const res = await db.getAllAnnouncements()
       const data = await res.json()
       setAnnouncements(data)
     } catch (e) {
@@ -747,16 +737,10 @@ function Announcements() {
   const handlePost = async (e) => {
     e.preventDefault()
     try {
-      const res = await fetch(`${API_URL}/api/announcements`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newAnnouncement)
-      })
-      if (res.ok) {
-        fetchAnnouncements()
-        setShowModal(false)
-        setNewAnnouncement({ title: '', content: '', priority: 'Normal' })
-      }
+      await db.addAnnouncement(newAnnouncement)
+      fetchAnnouncements()
+      setShowModal(false)
+      setNewAnnouncement({ title: '', content: '', priority: 'Normal' })
     } catch (e) {
       console.error(e)
     }
@@ -765,7 +749,7 @@ function Announcements() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this announcement?')) return
     try {
-      await fetch(`${API_URL}/api/announcements?id=${id}`, { method: 'DELETE' })
+      await db.deleteAnnouncement
       fetchAnnouncements()
     } catch (e) {
       console.error(e)
@@ -846,7 +830,7 @@ function GalleryManagement() {
 
   const fetchImages = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/images`)
+      const res = await db.getAllImages()
       const data = await res.json()
       setImages(data)
     } catch (e) {
@@ -864,16 +848,10 @@ function GalleryManagement() {
     }
     setUploading(true)
     try {
-      const res = await fetch(`${API_URL}/api/images`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newImage)
-      })
-      if (res.ok) {
-        fetchImages()
-        setShowModal(false)
-        setNewImage({ title: '', imageUrl: '' })
-      }
+      await db.addImage(newImage)
+      fetchImages()
+      setShowModal(false)
+      setNewImage({ title: '', imageUrl: '' })
     } catch (e) {
       console.error(e)
     } finally {
@@ -884,7 +862,7 @@ function GalleryManagement() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this image?')) return
     try {
-      await fetch(`${API_URL}/api/images?id=${id}`, { method: 'DELETE' })
+      await db.deleteImage(id)
       fetchImages()
     } catch (e) {
       console.error(e)
@@ -1123,7 +1101,7 @@ function StudentAnnouncements() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/announcements`)
+      const res = await db.getAllAnnouncements()
       const data = await res.json()
       setAnnouncements(data)
     } catch (e) {
