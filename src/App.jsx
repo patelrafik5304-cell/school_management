@@ -402,7 +402,7 @@ function StudentManagement() {
                     <td>{student.username || '-'}</td>
                     <td><span className="badge badge-success">{student.status || 'Active'}</span></td>
                     <td>
-                      <button className="btn btn-danger" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }} onClick={() => handleDelete(student._id)}>Delete</button>
+                      <button style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }} onClick={() => handleDelete(student._id)}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -835,7 +835,7 @@ function Announcements() {
                 <div className="announcement-date">{new Date(a.date).toLocaleDateString()}</div>
                 <div className="announcement-title">{a.title}</div>
                 <p>{a.content}</p>
-                <button className="btn btn-danger" style={{ marginTop: '0.5rem', padding: '0.25rem 0.5rem' }} onClick={() => handleDelete(a._id)}>Delete</button>
+                <button style={{ marginTop: '0.5rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }} onClick={() => handleDelete(a._id)}>Delete</button>
               </div>
             ))}
           </div>
@@ -957,8 +957,7 @@ function GalleryManagement() {
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '0.5rem' }}>
                   <div style={{ color: '#fff', fontSize: '0.875rem' }}>{image.title}</div>
                   <button 
-                    className="btn btn-danger" 
-                    style={{ marginTop: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                    style={{ marginTop: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                     onClick={() => handleDelete(image._id)}
                   >
                     Delete
