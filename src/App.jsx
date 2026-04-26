@@ -1089,7 +1089,7 @@ function GalleryManagement() {
             <p style={{ fontSize: '0.875rem' }}>Upload your first photo to get started</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
             {filteredImages.map((image, index) => (
               <div 
                 key={image.id}
