@@ -98,15 +98,11 @@ export async function deleteAnnouncement(id) {
 }
 
 export async function getAllImages() {
-  const q = query(imagesRef, orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(q);
-  const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  const seen = new Set();
-  return docs.filter(img => {
-    if (seen.has(img.id)) return false;
-    seen.add(img.id);
-    return true;
-  });
+  const snapshot = await getDocs(imagesRef);
+  const all = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  const map = new Map();
+  all.forEach(img => map.set(img.id, img));
+  return Array.from(map.values());
 }
 
 export async function addImage(data) {
