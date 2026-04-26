@@ -166,26 +166,23 @@ function AdminDashboard() {
 
   const fetchStudentsCount = async () => {
     try {
-      const res = await db.getAllStudents()
-      const data = await res.json()
-      setStats(prev => ({ ...prev, students: data.length }))
+      const students = await db.getAllStudents()
+      setStats(prev => ({ ...prev, students: students.length }))
     } catch (e) { console.error(e) }
   }
 
   const fetchStaffCount = async () => {
     try {
-      const res = await db.getAllStaff()
-      const data = await res.json()
-      setStats(prev => ({ ...prev, staff: data.length }))
+      const staff = await db.getAllStaff()
+      setStats(prev => ({ ...prev, staff: staff.length }))
     } catch (e) { console.error(e) }
   }
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await db.getAllAnnouncements()
-      const data = await res.json()
-      setAnnouncements(data.slice(0, 3))
-      setStats(prev => ({ ...prev, announcements: data.length }))
+      const announcements = await db.getAllAnnouncements()
+      setAnnouncements(announcements.slice(0, 3))
+      setStats(prev => ({ ...prev, announcements: announcements.length }))
     } catch (e) { console.error(e) }
   }
 
@@ -427,12 +424,10 @@ function AttendanceManagement() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res = await db.getAllStudents()
-      const data = await res.json()
+      const data = await db.getAllStudents()
       setStudents(data)
 
-      const attRes = await db.getAllAttendance(date)
-      const attData = await attRes.json()
+      const attData = await db.getAllAttendance(date)
       const attMap = {}
       attData.forEach(a => { attMap[a.studentId] = a.status })
       setAttendance(attMap)
@@ -536,8 +531,7 @@ function ResultsManagement() {
 
   const fetchResults = async () => {
     try {
-      const res = await db.getAllResults()
-      const data = await res.json()
+      const data = await db.getAllResults()
       setResults(data)
     } catch (e) {
       console.error(e)
@@ -660,8 +654,7 @@ function StaffManagement() {
 
   const fetchStaff = async () => {
     try {
-      const res = await db.getAllStaff()
-      const data = await res.json()
+      const data = await db.getAllStaff()
       setStaff(data)
     } catch (e) {
       console.error(e)
@@ -724,8 +717,7 @@ function Announcements() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await db.getAllAnnouncements()
-      const data = await res.json()
+      const data = await db.getAllAnnouncements()
       setAnnouncements(data)
     } catch (e) {
       console.error(e)
@@ -830,8 +822,7 @@ function GalleryManagement() {
 
   const fetchImages = async () => {
     try {
-      const res = await db.getAllImages()
-      const data = await res.json()
+      const data = await db.getAllImages()
       setImages(data)
     } catch (e) {
       console.error(e)
@@ -1101,8 +1092,7 @@ function StudentAnnouncements() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await db.getAllAnnouncements()
-      const data = await res.json()
+      const data = await db.getAllAnnouncements()
       setAnnouncements(data)
     } catch (e) {
       console.error(e)
