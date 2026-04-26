@@ -1095,6 +1095,30 @@ function StudentDashboard() {
 }
 
 function MyAttendance() {
+  const studentId = localStorage.getItem('studentId')
+  const [attendanceData, setAttendanceData] = useState({ present: 0, absent: 0, total: 0 })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAttendance()
+  }, [])
+
+const fetchAttendance = async () => {
+    if (!studentId) return
+    try {
+      const allAttendance = await db.getAttendanceByStudent(studentId)
+      const present = allAttendance.filter(a => a.status === 'Present').length
+      const absent = allAttendance.filter(a => a.status === 'Absent').length
+      const total = present + absent
+      const percentage = total > 0 ? Math.round((present / total) * 100) : 0
+      setAttendanceData({ present, absent, total, percentage })
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+}
+
   return (
     <div className="app">
       <nav className="navbar">
@@ -1111,22 +1135,24 @@ function MyAttendance() {
         <div className="page-header">
           <h1 className="page-title">My Attendance</h1>
         </div>
+        {loading ? <p>Loading...</p> : (
         <div className="card">
           <div className="stats-grid" style={{ marginBottom: '2rem' }}>
             <div className="stat-card">
-              <div className="stat-value">95%</div>
+              <div className="stat-value">{attendanceData.percentage || 0}%</div>
               <div className="stat-label">Overall Attendance</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value">19</div>
+              <div className="stat-value">{attendanceData.present}</div>
               <div className="stat-label">Days Present</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value">1</div>
+              <div className="stat-value">{attendanceData.absent}</div>
               <div className="stat-label">Days Absent</div>
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   )

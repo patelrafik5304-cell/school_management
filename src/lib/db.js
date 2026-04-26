@@ -55,6 +55,12 @@ export async function getAllAttendance(date) {
   return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
+export async function getAttendanceByStudent(studentId) {
+  const q = query(attendanceRef, where('studentId', '==', studentId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
+}
+
 export async function addAttendance(data) {
   const docRef = await addDoc(attendanceRef, data);
   return { id: docRef.id, _id: docRef.id, ...data };
