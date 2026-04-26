@@ -1032,7 +1032,38 @@ function GalleryManagement() {
 }
 
 function StudentDashboard() {
+  const studentId = localStorage.getItem('studentId')
   const studentName = localStorage.getItem('studentName') || 'Student'
+  const [stats, setStats] = useState({ percentage: 0, present: 0, absent: 0 })
+  const [notices, setNotices] = useState(0)
+  const [results, setResults] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    if (!studentId) return
+    try {
+      const attendance = await db.getAttendanceByStudent(studentId)
+      const present = attendance.filter(a => a.status === 'Present').length
+      const absent = attendance.filter(a => a.status === 'Absent').length
+      const total = present + absent
+      const percentage = total > 0 ? Math.round((present / total) * 100) : 0
+      setStats({ percentage, present, absent })
+
+      const allResults = await db.getAllResults()
+      setResults(allResults.slice(0, 3))
+
+      const allNotices = await db.getAllAnnouncements()
+      setNotices(allNotices.length)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
   
   return (
     <div className="app">
@@ -1050,35 +1081,35 @@ function StudentDashboard() {
         <div className="page-header">
           <h1 className="page-title">Welcome, {studentName}!</h1>
         </div>
+        {loading ? <p>Loading...</p> : (
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-value">95%</div>
+            <div className="stat-value">{stats.percentage}%</div>
             <div className="stat-label">Attendance</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">A+</div>
-            <div className="stat-label">Grade</div>
+            <div className="stat-value">{stats.present}</div>
+            <div className="stat-label">Days Present</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">3</div>
+            <div className="stat-value">{stats.absent}</div>
+            <div className="stat-label">Days Absent</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{notices}</div>
             <div className="stat-label">Notices</div>
           </div>
         </div>
+        )}
         <div className="grid grid-2" style={{ marginTop: '2rem' }}>
           <div className="card">
             <h3 className="card-header">My Recent Results</h3>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}>
-              <span>Mathematics</span>
-              <span className="badge badge-success">85 (A)</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}>
-              <span>English</span>
-              <span className="badge badge-success">78 (B+)</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
-              <span>Science</span>
-              <span className="badge badge-success">92 (A+)</span>
-            </div>
+            {results.length === 0 ? <p style={{ padding: '1rem', color: '#64748b' }}>No results yet</p> : results.map(result => (
+              <div key={result.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}>
+                <span>{result.subject}</span>
+                <span className="badge badge-success">{result.marks} ({result.grade})</span>
+              </div>
+            ))}
           </div>
           <div className="card">
             <h3 className="card-header">Quick Links</h3>
