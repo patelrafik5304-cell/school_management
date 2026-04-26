@@ -942,6 +942,8 @@ function GalleryManagement() {
     }
   }
 
+  const [selectedImage, setSelectedImage] = useState(null)
+
   return (
     <div className="app">
       <nav className="navbar">
@@ -967,8 +969,11 @@ function GalleryManagement() {
         ) : (
           <div className="gallery-grid">
             {images.map(image => (
-              <div key={image._id} className="gallery-item">
-                <img src={image.imageUrl} alt={image.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div key={image.id} 
+                className="gallery-item"
+                onClick={() => setSelectedImage(image)}
+                style={{ cursor: 'pointer' }}>
+                <img src={image.url || image.imageUrl} alt={image.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '0.5rem' }}>
                   <div style={{ color: '#fff', fontSize: '0.875rem' }}>{image.title}</div>
                   <button 
@@ -1024,6 +1029,30 @@ function GalleryManagement() {
                   {uploading ? 'Uploading...' : 'Upload'}
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+        {selectedImage && (
+          <div 
+            onClick={() => setSelectedImage(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.9)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ maxWidth: '90%', maxHeight: '90%' }} onClick={e => e.stopPropagation()}>
+              <img 
+                src={selectedImage.url || selectedImage.imageUrl} 
+                alt={selectedImage.title} 
+                style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px' }} 
+              />
+              <p style={{ color: 'white', textAlign: 'center', marginTop: '1rem', fontSize: '1.25rem', fontWeight: 600 }}>{selectedImage.title}</p>
             </div>
           </div>
         )}
