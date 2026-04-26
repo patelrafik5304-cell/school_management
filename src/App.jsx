@@ -854,12 +854,62 @@ function Announcements() {
 }
 
 function GalleryManagement() {
-  const images = [
-    { id: 1, title: 'Annual Day Celebration', date: 'April 20, 2026' },
-    { id: 2, title: 'Sports Day', date: 'April 15, 2026' },
-    { id: 3, title: 'Science Exhibition', date: 'April 10, 2026' },
-    { id: 4, title: 'Drawing Competition', date: 'April 5, 2026' },
-  ]
+  const [images, setImages] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [newImage, setNewImage] = useState({ title: '', imageUrl: '' })
+  const [uploading, setUploading] = useState(false)
+
+  useEffect(() => {
+    fetchImages()
+  }, [])
+
+  const fetchImages = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/images`)
+      const data = await res.json()
+      setImages(data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUpload = async (e) => {
+    e.preventDefault()
+    if (!newImage.imageUrl) {
+      alert('Please enter an image URL')
+      return
+    }
+    setUploading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/images`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newImage)
+      })
+      if (res.ok) {
+        fetchImages()
+        setShowModal(false)
+        setNewImage({ title: '', imageUrl: '' })
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this image?')) return
+    try {
+      await fetch(`${API_URL}/api/images?id=${id}`, { method: 'DELETE' })
+      fetchImages()
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   return (
     <div className="app">
@@ -879,17 +929,69 @@ function GalleryManagement() {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Gallery</h1>
-          <button className="btn btn-primary">+ Upload Photo</button>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Upload Photo</button>
         </div>
-        <div className="gallery-grid">
-          {images.map(image => (
-            <div key={image.id} className="gallery-item">
-              <div style={{ width: '100%', height: '100%', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-light)' }}>
-                {image.title}
+        {loading ? <p>Loading...</p> : images.length === 0 ? (
+          <p>No images yet</p>
+        ) : (
+          <div className="gallery-grid">
+            {images.map(image => (
+              <div key={image._id} className="gallery-item">
+                <img src={image.imageUrl} alt={image.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '0.5rem' }}>
+                  <div style={{ color: '#fff', fontSize: '0.875rem' }}>{image.title}</div>
+                  <button 
+                    className="btn btn-danger" 
+                    style={{ marginTop: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                    onClick={() => handleDelete(image._id)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {showModal && (
+          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3 className="modal-title">Upload Photo</h3>
+                <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              </div>
+              <form onSubmit={handleUpload}>
+                <div className="form-group">
+                  <label className="form-label">Title</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={newImage.title} 
+                    onChange={e => setNewImage({ ...newImage, title: e.target.value })} 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Image URL</label>
+                  <input 
+                    type="url" 
+                    className="form-input" 
+                    value={newImage.imageUrl} 
+                    onChange={e => setNewImage({ ...newImage, imageUrl: e.target.value })} 
+                    placeholder="https://example.com/image.jpg"
+                    required 
+                  />
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem' }}>
+                    Paste an image link from the internet
+                  </p>
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={uploading}>
+                  {uploading ? 'Uploading...' : 'Upload'}
+                </button>
+              </form>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
