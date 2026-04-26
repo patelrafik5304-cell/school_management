@@ -1,21 +1,27 @@
-import { storage, ref, uploadBytes, getDownloadURL } from './firebase';
+import { db, imagesRef } from './db';
+import { addDoc } from "firebase/firestore";
 
 export async function uploadImage(file) {
   if (!file) {
     throw new Error('No file provided');
   }
   
-  try {
-    const timestamp = Date.now();
-    const fileName = `${timestamp}_${file.name.replace(/\s+/g, '_')}`;
-    const storageRef = ref(storage, `gallery/${fileName}`);
-    
-    const snapshot = await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(snapshot.ref);
-    
-    return url;
-  } catch (e) {
-    console.error('Upload error:', e);
-    throw new Error('Upload failed: ' + e.message);
-  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64 = reader.result;
+        const docRef = await addDoc(imagesRef, {
+          title: file.name,
+          url: base64,
+          createdAt: new Date()
+        });
+        resolve(base64);
+      } catch (e) {
+        reject(e);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
