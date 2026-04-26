@@ -101,31 +101,84 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
 }
 
 .btn-primary:hover {
   background: linear-gradient(135deg, #1d4ed8 0%, var(--primary-dark) 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5), 0 0 30px rgba(37, 99, 235, 0.3);
 }
 
 .btn-primary:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 .btn-secondary {
   background: var(--bg-white);
   color: var(--text);
   border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-secondary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
 }
 
 .btn-secondary:hover {
-  background: var(--bg);
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.btn-secondary:hover::before {
+  opacity: 1;
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
 }
 
 .btn-danger {
   background: var(--danger);
   color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+}
+
+.btn-danger:active {
+  transform: scale(0.95);
 }
 
 .btn-danger:hover {
@@ -829,6 +882,146 @@ textarea {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Ripple Effect for Buttons */
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(0);
+  animation: ripple 0.6s ease-out;
+  pointer-events: none;
+}
+
+/* Neon Glow Effect */
+.btn-neon {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-neon::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, var(--primary), var(--primary-light), var(--primary), var(--primary-light));
+  background-size: 400% 400%;
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  filter: blur(8px);
+  animation: shimmer 3s ease infinite;
+  transition: opacity 0.3s ease;
+}
+
+.btn-neon:hover::after {
+  opacity: 0.6;
+}
+
+/* Gradient Border Button */
+.btn-gradient {
+  position: relative;
+  background: var(--bg-white);
+  z-index: 1;
+}
+
+.btn-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light), #06b6d4);
+  border-radius: inherit;
+  background-size: 300% 300%;
+  animation: shimmer 2s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  z-index: -1;
+}
+
+.btn-gradient:hover {
+  color: var(--primary);
+}
+
+/* Icon Button Styles */
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.btn-icon:hover {
+  transform: rotate(15deg) scale(1.1);
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+}
+
+.btn-icon:active {
+  transform: scale(0.9);
+}
+
+/* Touch-First Button (Extra Large) */
+.btn-touch {
+  min-height: 56px !important;
+  min-width: 120px !important;
+  padding: 1rem 2rem !important;
+  font-size: 1.1rem !important;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+/* Floating Action Button */
+.btn-fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5);
+  z-index: 100;
+  animation: float 3s ease-in-out infinite;
+}
+
+.btn-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 12px 35px rgba(37, 99, 235, 0.6);
+}
+
+.btn-fab::before {
+  animation: pulseRing 2s ease-out infinite;
 }
 
 @keyframes shake {

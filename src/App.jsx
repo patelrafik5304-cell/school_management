@@ -301,7 +301,7 @@ function AdminDashboard() {
             <h3 className="card-header">Quick Actions</h3>
             <div className="grid" style={{ gap: '1rem' }}>
               <Link to="/admin/students" className="btn btn-primary">Manage Students</Link>
-              <Link to="/admin/attendance" className="btn btn-primary">Mark Attendance</Link>
+              <Link to="/admin/attendance" className="btn btn-primary btn-touch">Mark Attendance</Link>
               <Link to="/admin/announcements" className="btn btn-primary">Post Announcement</Link>
               <Link to="/admin/gallery" className="btn btn-secondary">Upload Photos</Link>
             </div>
@@ -381,7 +381,7 @@ function StudentManagement() {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Student Management</h1>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Add Student</button>
+          <button className="btn btn-primary btn-touch" onClick={() => setShowModal(true)}>+ Add Student</button>
         </div>
         <div className="card">
           {loading ? <p>Loading...</p> : students.length === 0 ? (
@@ -635,7 +635,7 @@ function ResultsManagement() {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Results Management</h1>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Add Result</button>
+          <button className="btn btn-primary btn-touch" onClick={() => setShowModal(true)}>+ Add Result</button>
         </div>
         <div className="card">
           {loading ? <p>Loading...</p> : results.length === 0 ? (
@@ -835,7 +835,7 @@ function Announcements() {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Announcements</h1>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Post New</button>
+          <button className="btn btn-primary btn-touch" onClick={() => setShowModal(true)}>+ Post New</button>
         </div>
         {loading ? <p>Loading...</p> : announcements.length === 0 ? (
           <p>No announcements yet</p>
@@ -1055,7 +1055,7 @@ function GalleryManagement() {
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Gallery</h1>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Upload Photo</button>
+          <button className="btn btn-primary btn-touch" onClick={() => setShowModal(true)}>+ Upload Photo</button>
         </div>
         
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
