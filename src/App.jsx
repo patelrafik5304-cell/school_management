@@ -21,6 +21,7 @@ function App() {
         <Route path="/student/attendance" element={<MyAttendance />} />
         <Route path="/student/results" element={<MyResults />} />
         <Route path="/student/announcements" element={<StudentAnnouncements />} />
+        <Route path="/student/gallery" element={<StudentGallery />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
@@ -1074,6 +1075,7 @@ function StudentDashboard() {
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
           <Link to="/student/results" className="nav-link">Results</Link>
           <Link to="/student/announcements" className="nav-link">Notices</Link>
+          <Link to="/student/gallery" className="nav-link">Gallery</Link>
           <Link to="/" className="btn btn-secondary" onClick={() => { localStorage.clear() }}>Logout</Link>
         </div>
       </nav>
@@ -1159,6 +1161,7 @@ const fetchAttendance = async () => {
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
           <Link to="/student/results" className="nav-link">Results</Link>
           <Link to="/student/announcements" className="nav-link">Notices</Link>
+          <Link to="/student/gallery" className="nav-link">Gallery</Link>
           <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
@@ -1199,6 +1202,7 @@ function MyResults() {
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
           <Link to="/student/results" className="nav-link">Results</Link>
           <Link to="/student/announcements" className="nav-link">Notices</Link>
+          <Link to="/student/gallery" className="nav-link">Gallery</Link>
           <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
@@ -1255,6 +1259,7 @@ function StudentAnnouncements() {
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
           <Link to="/student/results" className="nav-link">Results</Link>
           <Link to="/student/announcements" className="nav-link">Notices</Link>
+          <Link to="/student/gallery" className="nav-link">Gallery</Link>
           <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
@@ -1271,6 +1276,60 @@ function StudentAnnouncements() {
                 <div className="announcement-date">{new Date(a.date).toLocaleDateString()}</div>
                 <div className="announcement-title">{a.title}</div>
                 <p>{a.content}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function StudentGallery() {
+  const [images, setImages] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchImages()
+  }, [])
+
+  const fetchImages = async () => {
+    try {
+      const data = await db.getAllImages()
+      setImages(data)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="app">
+      <nav className="navbar">
+        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <div className="navbar-nav">
+          <Link to="/student" className="nav-link">Dashboard</Link>
+          <Link to="/student/attendance" className="nav-link">Attendance</Link>
+          <Link to="/student/results" className="nav-link">Results</Link>
+          <Link to="/student/announcements" className="nav-link">Notices</Link>
+          <Link to="/student/gallery" className="nav-link">Gallery</Link>
+          <Link to="/student/gallery" className="nav-link">Gallery</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
+        </div>
+      </nav>
+      <div className="container">
+        <div className="page-header">
+          <h1 className="page-title">Photo Gallery</h1>
+        </div>
+        {loading ? <p>Loading...</p> : images.length === 0 ? <p style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>No images yet</p> : (
+          <div className="grid grid-3" style={{ marginTop: '1.5rem' }}>
+            {images.map(image => (
+              <div key={image.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <img src={image.url} alt={image.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
+                <div style={{ padding: '0.75rem' }}>
+                  <p style={{ margin: 0, fontWeight: 600 }}>{image.title}</p>
+                </div>
               </div>
             ))}
           </div>
