@@ -882,9 +882,16 @@ function GalleryManagement() {
   const [images, setImages] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [newImage, setNewImage] = useState({ title: '', imageUrl: '' })
+  const [newImage, setNewImage] = useState({ title: '', description: '', tags: '' })
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState('newest')
+  const [selectedImages, setSelectedImages] = useState([])
+  const [selectedImage, setSelectedImage] = useState(null)
+  const [viewIndex, setViewIndex] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
 
   useEffect(() => {
     fetchImages()
@@ -901,6 +908,34 @@ function GalleryManagement() {
     }
   }
 
+  const handleFileSelect = (file) => {
+    if (file) {
+      setSelectedFile(file)
+      const reader = new FileReader()
+      reader.onload = () => setPreviewUrl(reader.result)
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file && file.type.startsWith('image/')) {
+      handleFileSelect(file)
+    }
+  }
+
+  const filteredImages = images
+    .filter(img => img.title?.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt)
+      if (sortBy === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt)
+      if (sortBy === 'az') return a.title.localeCompare(b.title)
+      if (sortBy === 'za') return b.title.localeCompare(a.title)
+      return 0
+    })
+
   const handleUpload = async (e) => {
     e.preventDefault()
     if (!newImage.title || (!selectedFile && !newImage.imageUrl)) {
@@ -910,16 +945,15 @@ function GalleryManagement() {
     setUploading(true)
     try {
       let imageUrl = newImage.imageUrl
-      
       if (selectedFile) {
         imageUrl = await uploadImage(selectedFile)
       }
-      
-      await db.addImage({ title: newImage.title, imageUrl })
+      await db.addImage({ title: newImage.title, description: newImage.description, tags: newImage.tags, imageUrl })
       fetchImages()
       setShowModal(false)
-      setNewImage({ title: '', imageUrl: '' })
+      setNewImage({ title: '', description: '', tags: '' })
       setSelectedFile(null)
+      setPreviewUrl(null)
     } catch (e) {
       console.error(e)
       alert('Upload failed')
@@ -929,10 +963,6 @@ function GalleryManagement() {
   }
 
   const handleDelete = async (id) => {
-    if (!id) {
-      console.error('Invalid ID:', id);
-      return;
-    }
     if (!confirm('Delete this image?')) return
     try {
       await db.deleteImage(id)
@@ -942,7 +972,35 @@ function GalleryManagement() {
     }
   }
 
-  const [selectedImage, setSelectedImage] = useState(null)
+  const toggleSelect = (id) => {
+    setSelectedImages(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])
+  }
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Delete ${selectedImages.length} images?`)) return
+    try {
+      for (const id of selectedImages) {
+        await db.deleteImage(id)
+      }
+      setSelectedImages([])
+      fetchImages()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const openLightbox = (index) => {
+    setViewIndex(index)
+    setSelectedImage(filteredImages[index])
+  }
+
+  const navigateLightbox = (direction) => {
+    const newIndex = viewIndex + direction
+    if (newIndex >= 0 && newIndex < filteredImages.length) {
+      setViewIndex(newIndex)
+      setSelectedImage(filteredImages[newIndex])
+    }
+  }
 
   return (
     <div className="app">
@@ -964,24 +1022,119 @@ function GalleryManagement() {
           <h1 className="page-title">Gallery</h1>
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Upload Photo</button>
         </div>
-        {loading ? <p>Loading...</p> : images.length === 0 ? (
-          <p>No images yet</p>
+        
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input 
+            type="text" 
+            placeholder="Search images..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{ flex: '1', minWidth: '200px', padding: '0.75rem 1rem', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '0.9rem' }}
+          />
+          <select 
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            style={{ padding: '0.75rem 1rem', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '0.9rem', cursor: 'pointer' }}
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="az">A-Z</option>
+            <option value="za">Z-A</option>
+          </select>
+          {selectedImages.length > 0 && (
+            <button onClick={handleBulkDelete} style={{ padding: '0.75rem 1rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+              Delete ({selectedImages.length})
+            </button>
+          )}
+        </div>
+
+        {loading ? <p>Loading...</p> : filteredImages.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>
+            <p style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No images yet</p>
+            <p style={{ fontSize: '0.875rem' }}>Upload your first photo to get started</p>
+          </div>
         ) : (
-          <div className="gallery-grid">
-            {images.map(image => (
-              <div key={image.id} 
-                className="gallery-item"
-                onClick={() => setSelectedImage(image)}
-                style={{ cursor: 'pointer' }}>
-                <img src={image.url || image.imageUrl} alt={image.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '0.5rem' }}>
-                  <div style={{ color: '#fff', fontSize: '0.875rem' }}>{image.title}</div>
-                  <button 
-                    style={{ marginTop: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                    onClick={() => handleDelete(image._id)}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+            {filteredImages.map((image, index) => (
+              <div 
+                key={image.id}
+                style={{ 
+                  background: 'white', 
+                  borderRadius: '12px', 
+                  overflow: 'hidden', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  cursor: 'pointer',
+                  position: 'relative'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)' }}
+                onClick={() => openLightbox(index)}
+              >
+                <div style={{ position: 'relative', paddingTop: '75%' }}>
+                  <img 
+                    src={image.url || image.imageUrl} 
+                    alt={image.title} 
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div style={{ 
+                    position: 'absolute', 
+                    inset: 0, 
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)',
+                    opacity: 0,
+                    transition: 'opacity 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    padding: '1rem'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                  onMouseLeave={e => e.currentTarget.style.opacity = 0}
                   >
-                    Delete
-                  </button>
+                    <span style={{ color: 'white', fontWeight: 600 }}>{image.title}</span>
+                  </div>
+                  <div 
+                    style={{ 
+                      position: 'absolute', 
+                      top: '0.5rem', 
+                      left: '0.5rem',
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '4px',
+                      background: selectedImages.includes(image.id) ? '#3b82f6' : 'rgba(255,255,255,0.9)',
+                      border: '2px solid #3b82f6',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onClick={e => { e.stopPropagation(); toggleSelect(image.id); }}
+                  >
+                    {selectedImages.includes(image.id) && <span style={{ color: 'white', fontSize: '14px' }}>✓</span>}
+                  </div>
+                </div>
+                <div style={{ padding: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600, color: '#1f2937', fontSize: '0.95rem' }}>{image.title}</p>
+                      <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#6b7280' }}>
+                        {image.createdAt ? new Date(image.createdAt).toLocaleDateString() : 'Unknown date'}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); openLightbox(index); }}
+                        style={{ padding: '0.4rem 0.75rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}
+                      >
+                        View
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDelete(image.id); }}
+                        style={{ padding: '0.4rem 0.75rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -989,30 +1142,73 @@ function GalleryManagement() {
         )}
 
         {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal-overlay" onClick={() => { setShowModal(false); setPreviewUrl(null); }}>
+            <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '100%' }}>
               <div className="modal-header">
                 <h3 className="modal-title">Upload Photo</h3>
-                <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+                <button className="modal-close" onClick={() => { setShowModal(false); setPreviewUrl(null); }}>×</button>
               </div>
               <form onSubmit={handleUpload}>
+                <div 
+                  style={{ 
+                    border: `2px dashed ${isDragging ? '#3b82f6' : '#e5e7eb'}`,
+                    borderRadius: '12px',
+                    padding: '2rem',
+                    textAlign: 'center',
+                    marginBottom: '1rem',
+                    background: isDragging ? '#eff6ff' : 'white',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={handleDrop}
+                >
+                  {previewUrl ? (
+                    <div>
+                      <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} />
+                      <button type="button" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }} style={{ marginTop: '0.5rem', padding: '0.25rem 0.5rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Remove</button>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📁</p>
+                      <p style={{ color: '#6b7280', marginBottom: '0.5rem' }}>Drag and drop image here</p>
+                      <p style={{ fontSize: '0.875rem', color: '#9ca3af', marginBottom: '1rem' }}>or</p>
+                      <label style={{ padding: '0.75rem 1.5rem', background: '#3b82f6', color: 'white', borderRadius: '8px', cursor: 'pointer' }}>
+                        Browse Files
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleFileSelect(e.target.files[0])} />
+                      </label>
+                    </div>
+                  )}
+                </div>
                 <div className="form-group">
-                  <label className="form-label">Title</label>
+                  <label className="form-label">Title *</label>
                   <input 
                     type="text" 
                     className="form-input" 
                     value={newImage.title} 
                     onChange={e => setNewImage({ ...newImage, title: e.target.value })} 
                     required 
+                    placeholder="Enter image title"
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Choose Image</label>
+                  <label className="form-label">Description</label>
+                  <textarea 
+                    className="form-input" 
+                    value={newImage.description} 
+                    onChange={e => setNewImage({ ...newImage, description: e.target.value })} 
+                    placeholder="Enter image description"
+                    rows={3}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Tags</label>
                   <input 
-                    type="file" 
-                    accept="image/*"
-                    className="form-input"
-                    onChange={e => setSelectedFile(e.target.files[0])} 
+                    type="text" 
+                    className="form-input" 
+                    value={newImage.tags} 
+                    onChange={e => setNewImage({ ...newImage, tags: e.target.value })} 
+                    placeholder="tag1, tag2, tag3"
                   />
                 </div>
                 <div className="form-group">
@@ -1020,25 +1216,26 @@ function GalleryManagement() {
                   <input 
                     type="url" 
                     className="form-input" 
-                    value={newImage.imageUrl} 
+                    value={newImage.imageUrl || ''} 
                     onChange={e => setNewImage({ ...newImage, imageUrl: e.target.value })} 
                     placeholder="https://example.com/image.jpg"
                   />
                 </div>
-                <button type="submit" className="btn btn-primary" disabled={uploading}>
-                  {uploading ? 'Uploading...' : 'Upload'}
+                <button type="submit" className="btn btn-primary" disabled={uploading} style={{ width: '100%', marginTop: '1rem' }}>
+                  {uploading ? 'Uploading...' : 'Upload Photo'}
                 </button>
               </form>
             </div>
           </div>
         )}
+
         {selectedImage && (
           <div 
             onClick={() => setSelectedImage(null)}
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0,0,0,0.9)',
+              background: 'rgba(0,0,0,0.95)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1046,14 +1243,40 @@ function GalleryManagement() {
               cursor: 'pointer'
             }}
           >
-            <div style={{ maxWidth: '90%', maxHeight: '90%' }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => navigateLightbox(-1)}
+              style={{ position: 'absolute', left: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', cursor: 'pointer', color: 'white', fontSize: '1.5rem' }}
+            >
+              ‹
+            </button>
+            <div style={{ maxWidth: '90%', maxHeight: '90%', display: 'flex', gap: '2rem' }} onClick={e => e.stopPropagation()}>
               <img 
                 src={selectedImage.url || selectedImage.imageUrl} 
                 alt={selectedImage.title} 
-                style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px' }} 
+                style={{ maxWidth: '70vw', maxHeight: '85vh', borderRadius: '12px', objectFit: 'contain' }} 
               />
-              <p style={{ color: 'white', textAlign: 'center', marginTop: '1rem', fontSize: '1.25rem', fontWeight: 600 }}>{selectedImage.title}</p>
+              <div style={{ width: '300px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
+                <h3 style={{ marginTop: 0 }}>{selectedImage.title}</h3>
+                <p style={{ fontSize: '0.875rem', opacity: 0.8 }}>{selectedImage.description || 'No description'}</p>
+                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.6 }}>Uploaded: {selectedImage.createdAt ? new Date(selectedImage.createdAt).toLocaleString() : 'Unknown'}</p>
+                </div>
+                <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                  <button 
+                    onClick={() => { handleDelete(selectedImage.id); setSelectedImage(null); }}
+                    style={{ padding: '0.5rem 1rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </div>
+            <button 
+              onClick={() => navigateLightbox(1)}
+              style={{ position: 'absolute', right: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', cursor: 'pointer', color: 'white', fontSize: '1.5rem' }}
+            >
+              ›
+            </button>
           </div>
         )}
       </div>
