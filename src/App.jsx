@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom'
 import './index.css'
 import * as db from './lib/db'
+import { uploadImage } from './lib/storage'
 
 function App() {
   return (
@@ -815,6 +816,7 @@ function GalleryManagement() {
   const [showModal, setShowModal] = useState(false)
   const [newImage, setNewImage] = useState({ title: '', imageUrl: '' })
   const [uploading, setUploading] = useState(false)
+  const [selectedFile, setSelectedFile] = useState(null)
 
   useEffect(() => {
     fetchImages()
@@ -833,18 +835,26 @@ function GalleryManagement() {
 
   const handleUpload = async (e) => {
     e.preventDefault()
-    if (!newImage.title || !newImage.imageUrl) {
-      alert('Please enter title and image URL')
+    if (!newImage.title || (!selectedFile && !newImage.imageUrl)) {
+      alert('Please enter title and select an image')
       return
     }
     setUploading(true)
     try {
-      await db.addImage(newImage)
+      let imageUrl = newImage.imageUrl
+      
+      if (selectedFile) {
+        imageUrl = await uploadImage(selectedFile)
+      }
+      
+      await db.addImage({ title: newImage.title, imageUrl })
       fetchImages()
       setShowModal(false)
       setNewImage({ title: '', imageUrl: '' })
+      setSelectedFile(null)
     } catch (e) {
       console.error(e)
+      alert('Upload failed')
     } finally {
       setUploading(false)
     }
@@ -921,14 +931,22 @@ function GalleryManagement() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Image URL</label>
+                  <label className="form-label">Choose Image</label>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    className="form-input"
+                    onChange={e => setSelectedFile(e.target.files[0])} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Or Image URL</label>
                   <input 
                     type="url" 
                     className="form-input" 
                     value={newImage.imageUrl} 
                     onChange={e => setNewImage({ ...newImage, imageUrl: e.target.value })} 
                     placeholder="https://example.com/image.jpg"
-                    required 
                   />
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={uploading}>
