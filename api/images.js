@@ -2,15 +2,29 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+let cachedConnection = global.mongoose;
+
+if (!cachedConnection) {
+  cachedConnection = global.mongoose = { conn: null, promise: null };
+}
+
 async function connectDB() {
-  if (mongoose.connection.readyState === 0) {
-    try {
-      await mongoose.connect(MONGODB_URI);
-    } catch (e) {
-      console.error('MongoDB connection error:', e);
-    }
+  if (cachedConnection.conn) {
+    return cachedConnection.conn;
   }
-  return mongoose.connection;
+
+  if (!cachedConnection.promise) {
+    if (!MONGODB_URI) {
+      throw new Error('Please define the MONGODB_URI environment variable');
+    }
+    
+    cachedConnection.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
+      return mongoose;
+    });
+  }
+  
+  cachedConnection.conn = await cachedConnection.promise;
+  return cachedConnection.conn;
 }
 
 const imageSchema = new mongoose.Schema({
@@ -21,7 +35,9 @@ const imageSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  
   try {
     await connectDB();
     const Image = mongoose.models.Image || mongoose.model('Image', imageSchema);
@@ -48,4 +64,4 @@ export default async function handler(req, res) {
     console.error('API Error:', error);
     return res.status(500).json({ message: 'Server error', error: error.message });
   }
-}
+};

@@ -2,10 +2,29 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+let cachedConnection = global.mongoose;
+
+if (!cachedConnection) {
+  cachedConnection = global.mongoose = { conn: null, promise: null };
+}
+
 async function connectDB() {
-  if (mongoose.connection.readyState === 0) {
-    await mongoose.connect(MONGODB_URI);
+  if (cachedConnection.conn) {
+    return cachedConnection.conn;
   }
+
+  if (!cachedConnection.promise) {
+    if (!MONGODB_URI) {
+      throw new Error('Please define the MONGODB_URI environment variable');
+    }
+    
+    cachedConnection.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
+      return mongoose;
+    });
+  }
+  
+  cachedConnection.conn = await cachedConnection.promise;
+  return cachedConnection.conn;
 }
 
 const studentSchema = new mongoose.Schema({
@@ -22,32 +41,39 @@ const studentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export default async function handler(req, res) {
-  await connectDB();
-  const Student = mongoose.models.Student || mongoose.model('Student', studentSchema);
+module.exports = async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
   
-  if (req.method === 'POST') {
-    const { username, password } = req.body;
+  try {
+    await connectDB();
+    const Student = mongoose.models.Student || mongoose.model('Student', studentSchema);
     
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Username and password required' });
+    if (req.method === 'POST') {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password required' });
+      }
+      
+      const student = await Student.findOne({ username, password, status: 'Active' });
+      
+      if (!student) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+      
+      return res.status(200).json({
+        _id: student._id,
+        name: student.name,
+        class: student.class,
+        rollNumber: student.rollNumber,
+        username: student.username,
+        message: 'Login successful'
+      });
     }
     
-    const student = await Student.findOne({ username, password, status: 'Active' });
-    
-    if (!student) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-    
-    return res.status(200).json({
-      _id: student._id,
-      name: student.name,
-      class: student.class,
-      rollNumber: student.rollNumber,
-      username: student.username,
-      message: 'Login successful'
-    });
+    return res.status(405).json({ message: 'Method not allowed' });
+  } catch (error) {
+    console.error('API Error:', error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
   }
-  
-  return res.status(405).json({ message: 'Method not allowed' });
-}
+};

@@ -2,17 +2,29 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-let cachedConnection = null;
+let cachedConnection = global.mongoose;
+
+if (!cachedConnection) {
+  cachedConnection = global.mongoose = { conn: null, promise: null };
+}
 
 async function connectDB() {
-  if (cachedConnection) return cachedConnection;
-  
-  if (!MONGODB_URI) {
-    throw new Error('MONGODB_URI not configured');
+  if (cachedConnection.conn) {
+    return cachedConnection.conn;
+  }
+
+  if (!cachedConnection.promise) {
+    if (!MONGODB_URI) {
+      throw new Error('Please define the MONGODB_URI environment variable');
+    }
+    
+    cachedConnection.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
+      return mongoose;
+    });
   }
   
-  cachedConnection = await mongoose.connect(MONGODB_URI);
-  return cachedConnection;
+  cachedConnection.conn = await cachedConnection.promise;
+  return cachedConnection.conn;
 }
 
 const studentSchema = new mongoose.Schema({
@@ -37,7 +49,7 @@ function generateCredentials(name, rollNumber) {
   };
 }
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   
   try {
@@ -45,11 +57,6 @@ export default async function handler(req, res) {
     const Student = mongoose.models.Student || mongoose.model('Student', studentSchema);
     
     if (req.method === 'GET') {
-      const { id } = req.query;
-      if (id) {
-        const student = await Student.findById(id);
-        return res.status(200).json(student);
-      }
       const students = await Student.find().sort({ rollNumber: 1 });
       return res.status(200).json(students);
     }
@@ -78,15 +85,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: 'Student deleted' });
     }
     
-    if (req.method === 'PUT') {
-      const { id } = req.query;
-      const updated = await Student.findByIdAndUpdate(id, req.body, { new: true });
-      return res.status(200).json(updated);
-    }
-    
     return res.status(405).json({ message: 'Method not allowed' });
   } catch (error) {
     console.error('API Error:', error);
     return res.status(500).json({ message: 'Server error', error: error.message });
   }
-}
+};
