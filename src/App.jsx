@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom'
 import './index.css'
-
-const API_URL = '';
+import * as db from './lib/db'
 
 function App() {
   return (
@@ -53,8 +52,8 @@ function EntryPage() {
   )
 }
 
-const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_USERNAME = 'admin'
+const ADMIN_PASSWORD = 'admin123'
 
 function LoginPage() {
   const [role, setRole] = useState('student')
@@ -81,23 +80,14 @@ function LoginPage() {
       setLoading(true)
       setError('')
       try {
-        const res = await fetch(`${API_URL}/api/auth`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        })
-        const data = await res.json()
-        if (res.ok) {
-          localStorage.setItem('studentId', data._id)
-          localStorage.setItem('studentName', data.name)
-          localStorage.setItem('studentClass', data.class)
-          localStorage.setItem('userRole', 'student')
-          navigate('/student')
-        } else {
-          setError(data.message || 'Invalid credentials')
-        }
+        const student = await db.loginStudent(username, password)
+        localStorage.setItem('studentId', student.id)
+        localStorage.setItem('studentName', student.name)
+        localStorage.setItem('studentClass', student.class)
+        localStorage.setItem('userRole', 'student')
+        navigate('/student')
       } catch (e) {
-        setError('Network error. Please try again.')
+        setError('Invalid credentials')
       } finally {
         setLoading(false)
       }
@@ -176,7 +166,7 @@ function AdminDashboard() {
 
   const fetchStudentsCount = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/students`)
+      const res = await db.getAllStudents()
       const data = await res.json()
       setStats(prev => ({ ...prev, students: data.length }))
     } catch (e) { console.error(e) }
@@ -280,9 +270,8 @@ function StudentManagement() {
 
   const fetchStudents = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/students`)
-      const data = await res.json()
-      setStudents(data)
+      const students = await db.getAllStudents()
+      setStudents(students)
     } catch (e) {
       console.error(e)
     } finally {
@@ -294,29 +283,20 @@ function StudentManagement() {
     e.preventDefault()
     setError('')
     try {
-      const res = await fetch(`${API_URL}/api/students`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newStudent)
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setGeneratedCredentials({ username: data.username, password: data.autoPassword })
-        fetchStudents()
-        setNewStudent({ name: '', class: '', rollNumber: '' })
-      } else {
-        setError(data.message || 'Failed to add student')
-      }
+      const result = await db.addStudent(newStudent)
+      setGeneratedCredentials({ username: result.username, password: result.password })
+      fetchStudents()
+      setNewStudent({ name: '', class: '', rollNumber: '' })
     } catch (e) {
       console.error(e)
-      setError('Network error. Please try again.')
+      setError('Failed to add student')
     }
   }
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this student?')) return
     try {
-      await fetch(`${API_URL}/api/students?id=${id}`, { method: 'DELETE' })
+      await db.deleteStudent(id)
       fetchStudents()
     } catch (e) {
       console.error(e)
@@ -447,7 +427,7 @@ function AttendanceManagement() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${API_URL}/api/students`)
+      const res = await db.getAllStudents()
       const data = await res.json()
       setStudents(data)
 
