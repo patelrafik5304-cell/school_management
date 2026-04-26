@@ -53,30 +53,53 @@ function EntryPage() {
   )
 }
 
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'admin123';
+
 function LoginPage() {
   const [role, setRole] = useState('student')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     if (!username || !password) {
       setError('Please enter username and password')
       return
     }
     if (role === 'admin') {
-      if (username === 'admin' && password === 'admin123') {
+      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        localStorage.setItem('userRole', 'admin')
         navigate('/admin')
       } else {
         setError('Invalid credentials for admin')
       }
     } else {
-      if (username === 'student' && password === 'student123') {
-        navigate('/student')
-      } else {
-        setError('Invalid credentials for student')
+      setLoading(true)
+      setError('')
+      try {
+        const res = await fetch(`${API_URL}/api/auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        })
+        const data = await res.json()
+        if (res.ok) {
+          localStorage.setItem('studentId', data._id)
+          localStorage.setItem('studentName', data.name)
+          localStorage.setItem('studentClass', data.class)
+          localStorage.setItem('userRole', 'student')
+          navigate('/student')
+        } else {
+          setError(data.message || 'Invalid credentials')
+        }
+      } catch (e) {
+        setError('Network error. Please try again.')
+      } finally {
+        setLoading(false)
       }
     }
   }
@@ -126,8 +149,8 @@ function LoginPage() {
             />
           </div>
           {error && <p className="form-error">{error}</p>}
-          <button type="submit" className="btn btn-primary login-btn">
-            Sign In
+          <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
@@ -188,7 +211,7 @@ function AdminDashboard() {
           <Link to="/admin/staff" className="nav-link">Staff</Link>
           <Link to="/admin/announcements" className="nav-link">Notices</Link>
           <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
       <div className="container">
@@ -249,6 +272,7 @@ function StudentManagement() {
   const [showModal, setShowModal] = useState(false)
   const [newStudent, setNewStudent] = useState({ name: '', class: '', rollNumber: '' })
   const [error, setError] = useState('')
+  const [generatedCredentials, setGeneratedCredentials] = useState(null)
 
   useEffect(() => {
     fetchStudents()
@@ -275,12 +299,12 @@ function StudentManagement() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newStudent)
       })
+      const data = await res.json()
       if (res.ok) {
+        setGeneratedCredentials({ username: data.username, password: data.autoPassword })
         fetchStudents()
-        setShowModal(false)
         setNewStudent({ name: '', class: '', rollNumber: '' })
       } else {
-        const data = await res.json()
         setError(data.message || 'Failed to add student')
       }
     } catch (e) {
@@ -311,7 +335,7 @@ function StudentManagement() {
           <Link to="/admin/staff" className="nav-link">Staff</Link>
           <Link to="/admin/announcements" className="nav-link">Notices</Link>
           <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
       <div className="container">
@@ -329,6 +353,7 @@ function StudentManagement() {
                   <th>Roll No.</th>
                   <th>Name</th>
                   <th>Class</th>
+                  <th>Username</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -339,6 +364,7 @@ function StudentManagement() {
                     <td>{student.rollNumber}</td>
                     <td>{student.name}</td>
                     <td>{student.class}</td>
+                    <td>{student.username || '-'}</td>
                     <td><span className="badge badge-success">{student.status || 'Active'}</span></td>
                     <td>
                       <button className="btn btn-danger" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }} onClick={() => handleDelete(student._id)}>Delete</button>
@@ -351,11 +377,11 @@ function StudentManagement() {
         </div>
 
         {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-overlay" onClick={() => { setShowModal(false); setGeneratedCredentials(null); }}>
             <div className="modal" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
                 <h3 className="modal-title">Add New Student</h3>
-                <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+                <button className="modal-close" onClick={() => { setShowModal(false); setGeneratedCredentials(null); }}>×</button>
               </div>
               <form onSubmit={handleAddStudent}>
                 <div className="form-group">
@@ -390,6 +416,14 @@ function StudentManagement() {
                   />
                 </div>
                 {error && <p className="form-error">{error}</p>}
+                {generatedCredentials && (
+                  <div style={{ background: '#d4edda', padding: '1rem', borderRadius: '4px', marginBottom: '1rem' }}>
+                    <p style={{ margin: 0, fontWeight: 'bold', color: '#155724' }}>Login Credentials Generated!</p>
+                    <p style={{ margin: '0.5rem 0 0 0' }}>Username: <strong>{generatedCredentials.username}</strong></p>
+                    <p style={{ margin: '0.25rem 0 0 0' }}>Password: <strong>{generatedCredentials.password}</strong></p>
+                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', color: '#155724' }}>Share these with the student</p>
+                  </div>
+                )}
                 <button type="submit" className="btn btn-primary">Add Student</button>
               </form>
             </div>
@@ -454,7 +488,7 @@ function AttendanceManagement() {
           <Link to="/admin/staff" className="nav-link">Staff</Link>
           <Link to="/admin/announcements" className="nav-link">Notices</Link>
           <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
       <div className="container">
@@ -566,7 +600,7 @@ function ResultsManagement() {
           <Link to="/admin/staff" className="nav-link">Staff</Link>
           <Link to="/admin/announcements" className="nav-link">Notices</Link>
           <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
       <div className="container">
@@ -678,7 +712,7 @@ function StaffManagement() {
           <Link to="/admin/staff" className="nav-link">Staff</Link>
           <Link to="/admin/announcements" className="nav-link">Notices</Link>
           <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
       <div className="container">
@@ -770,7 +804,7 @@ function Announcements() {
           <Link to="/admin/staff" className="nav-link">Staff</Link>
           <Link to="/admin/announcements" className="nav-link">Notices</Link>
           <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
       <div className="container">
@@ -839,7 +873,7 @@ function GalleryManagement() {
           <Link to="/admin/staff" className="nav-link">Staff</Link>
           <Link to="/admin/announcements" className="nav-link">Notices</Link>
           <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
       <div className="container">
@@ -862,6 +896,8 @@ function GalleryManagement() {
 }
 
 function StudentDashboard() {
+  const studentName = localStorage.getItem('studentName') || 'Student'
+  
   return (
     <div className="app">
       <nav className="navbar">
@@ -871,12 +907,12 @@ function StudentDashboard() {
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
           <Link to="/student/results" className="nav-link">Results</Link>
           <Link to="/student/announcements" className="nav-link">Notices</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => { localStorage.clear() }}>Logout</Link>
         </div>
       </nav>
       <div className="container">
         <div className="page-header">
-          <h1 className="page-title">Welcome, Rahul!</h1>
+          <h1 className="page-title">Welcome, {studentName}!</h1>
         </div>
         <div className="stats-grid">
           <div className="stat-card">
@@ -932,7 +968,7 @@ function MyAttendance() {
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
           <Link to="/student/results" className="nav-link">Results</Link>
           <Link to="/student/announcements" className="nav-link">Notices</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
       <div className="container">
@@ -970,7 +1006,7 @@ function MyResults() {
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
           <Link to="/student/results" className="nav-link">Results</Link>
           <Link to="/student/announcements" className="nav-link">Notices</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
       <div className="container">
@@ -1027,7 +1063,7 @@ function StudentAnnouncements() {
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
           <Link to="/student/results" className="nav-link">Results</Link>
           <Link to="/student/announcements" className="nav-link">Notices</Link>
-          <Link to="/" className="btn btn-secondary">Logout</Link>
+          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
       <div className="container">
