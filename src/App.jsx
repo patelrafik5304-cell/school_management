@@ -1089,7 +1089,7 @@ function GalleryManagement() {
             <p style={{ fontSize: '0.875rem' }}>Upload your first photo to get started</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+          <div className="data-loaded" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
             {filteredImages.map((image, index) => (
               <div 
                 key={image.id}
@@ -1110,6 +1110,7 @@ function GalleryManagement() {
                   <img 
                     src={image.url || image.imageUrl} 
                     alt={image.title} 
+                    loading="lazy"
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                   <div style={{ 
