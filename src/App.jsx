@@ -28,8 +28,17 @@ function App() {
 }
 
 function EntryPage() {
-  const handleAdminLogin = () => { window.location.href = '/login?role=admin'; };
-  const handleStudentLogin = () => { window.location.href = '/login?role=student'; };
+  const navigate = useNavigate();
+  const handleAdminLogin = (e) => { 
+    e.preventDefault();
+    e.stopPropagation();
+    navigate('/login?role=admin'); 
+  };
+  const handleStudentLogin = (e) => { 
+    e.preventDefault();
+    e.stopPropagation();
+    navigate('/login?role=student'); 
+  };
   
   return (
     <div className="login-page">
@@ -38,16 +47,42 @@ function EntryPage() {
           <h1 className="login-title">Prathmik Kumarshala</h1>
           <p className="login-subtitle">Student Attendance Management System</p>
         </div>
-        <div className="grid" style={{ gap: '1rem', marginTop: '1.5rem' }}>
-          <button onClick={handleAdminLogin} className="btn btn-primary login-btn">
+        <div style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem' }}>
+          <button 
+            onClick={handleAdminLogin} 
+            style={{ 
+              width: '100%', 
+              padding: '0.875rem', 
+              fontSize: '1rem',
+              background: '#2563eb',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+          >
             Admin Login
           </button>
-          <button onClick={handleStudentLogin} className="btn btn-secondary login-btn">
+          <button 
+            onClick={handleStudentLogin} 
+            style={{ 
+              width: '100%', 
+              padding: '0.875rem', 
+              fontSize: '1rem',
+              background: '#64748b',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+          >
             Student Login
           </button>
         </div>
         <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>
+          <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
             Welcome to Prathmik Kumarshala - Primary School Management System
           </p>
         </div>
