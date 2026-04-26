@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import './index.css'
 import * as db from './lib/db'
 import { uploadImage } from './lib/storage'
@@ -28,6 +28,9 @@ function App() {
 }
 
 function EntryPage() {
+  const handleAdminLogin = () => { window.location.href = '/login?role=admin'; };
+  const handleStudentLogin = () => { window.location.href = '/login?role=student'; };
+  
   return (
     <div className="login-page">
       <div className="login-card">
@@ -36,12 +39,12 @@ function EntryPage() {
           <p className="login-subtitle">Student Attendance Management System</p>
         </div>
         <div className="grid" style={{ gap: '1rem', marginTop: '1.5rem' }}>
-          <Link to="/login?role=admin" className="btn btn-primary login-btn">
+          <button onClick={handleAdminLogin} className="btn btn-primary login-btn">
             Admin Login
-          </Link>
-          <Link to="/login?role=student" className="btn btn-secondary login-btn">
+          </button>
+          <button onClick={handleStudentLogin} className="btn btn-secondary login-btn">
             Student Login
-          </Link>
+          </button>
         </div>
         <div style={{ marginTop: '2rem', textAlign: 'center' }}>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>
@@ -57,12 +60,21 @@ const ADMIN_USERNAME = 'admin'
 const ADMIN_PASSWORD = 'admin123'
 
 function LoginPage() {
-  const [role, setRole] = useState('student')
+  const [searchParams] = useSearchParams()
+  const initialRole = searchParams.get('role') === 'admin' ? 'admin' : 'student'
+  const [role, setRole] = useState(initialRole)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const roleParam = searchParams.get('role')
+    if (roleParam === 'admin' || roleParam === 'student') {
+      setRole(roleParam)
+    }
+  }, [searchParams])
 
   const handleLogin = async (e) => {
     e.preventDefault()
