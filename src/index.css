@@ -341,6 +341,11 @@ body {
   background: #f1f5f9;
   padding: 0.25rem;
   border-radius: 12px;
+  position: relative;
+  z-index: 99999 !important;
+  overflow: visible;
+  transform: translateZ(0);
+  will-change: z-index;
 }
 
 .role-tab {
@@ -350,9 +355,12 @@ body {
   background: transparent;
   border-radius: 8px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  cursor: pointer !important;
+  transition: none;
   color: #64748b;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 99999 !important;
 }
 
 .role-tab:hover {

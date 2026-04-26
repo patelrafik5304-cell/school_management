@@ -105,16 +105,34 @@ function LoginPage() {
           <p className="login-subtitle">Sign in to continue</p>
         </div>
         
-        <div className="role-tabs">
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
           <button 
-            className={`role-tab ${role === 'admin' ? 'active' : ''}`}
             onClick={() => setRole('admin')}
+            style={{ 
+              flex: 1, 
+              padding: '0.75rem', 
+              border: 'none', 
+              background: role === 'admin' ? '#2563eb' : 'transparent', 
+              color: role === 'admin' ? 'white' : '#64748b',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
           >
             Admin
           </button>
           <button 
-            className={`role-tab ${role === 'student' ? 'active' : ''}`}
             onClick={() => setRole('student')}
+            style={{ 
+              flex: 1, 
+              padding: '0.75rem', 
+              border: 'none', 
+              background: role === 'student' ? '#2563eb' : 'transparent', 
+              color: role === 'student' ? 'white' : '#64748b',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
           >
             Student
           </button>
