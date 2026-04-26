@@ -248,6 +248,7 @@ function StudentManagement() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [newStudent, setNewStudent] = useState({ name: '', class: '', rollNumber: '' })
+  const [error, setError] = useState('')
 
   useEffect(() => {
     fetchStudents()
@@ -267,6 +268,7 @@ function StudentManagement() {
 
   const handleAddStudent = async (e) => {
     e.preventDefault()
+    setError('')
     try {
       const res = await fetch(`${API_URL}/api/students`, {
         method: 'POST',
@@ -277,9 +279,13 @@ function StudentManagement() {
         fetchStudents()
         setShowModal(false)
         setNewStudent({ name: '', class: '', rollNumber: '' })
+      } else {
+        const data = await res.json()
+        setError(data.message || 'Failed to add student')
       }
     } catch (e) {
       console.error(e)
+      setError('Network error. Please try again.')
     }
   }
 
@@ -383,6 +389,7 @@ function StudentManagement() {
                     required
                   />
                 </div>
+                {error && <p className="form-error">{error}</p>}
                 <button type="submit" className="btn btn-primary">Add Student</button>
               </form>
             </div>
