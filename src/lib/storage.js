@@ -1,25 +1,21 @@
+import { storage, ref, uploadBytes, getDownloadURL } from './firebase';
+
 export async function uploadImage(file) {
-  const UPLOADTHING_KEY = import.meta.env.VITE_UPLOADTHING_KEY;
-  
-  if (!UPLOADTHING_KEY) {
-    throw new Error('UploadThing key not configured. Add VITE_UPLOADTHING_KEY in Vercel.');
+  if (!file) {
+    throw new Error('No file provided');
   }
   
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  const response = await fetch('https://uploadthing.com/api/upload', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${UPLOADTHING_KEY}`,
-    },
-    body: formData,
-  });
-  
-  if (!response.ok) {
-    throw new Error('Upload failed');
+  try {
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${file.name.replace(/\s+/g, '_')}`;
+    const storageRef = ref(storage, `gallery/${fileName}`);
+    
+    const snapshot = await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(snapshot.ref);
+    
+    return url;
+  } catch (e) {
+    console.error('Upload error:', e);
+    throw new Error('Upload failed: ' + e.message);
   }
-  
-  const data = await response.json();
-  return data.url;
 }
