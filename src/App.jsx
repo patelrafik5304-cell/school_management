@@ -349,6 +349,10 @@ function StudentManagement() {
   }
 
   const handleDelete = async (id) => {
+    if (!id) {
+      console.error('Invalid ID:', id);
+      return;
+    }
     if (!confirm('Delete this student?')) return
     try {
       await db.deleteStudent(id)
@@ -797,9 +801,13 @@ function Announcements() {
   }
 
   const handleDelete = async (id) => {
+    if (!id) {
+      console.error('Invalid ID:', id);
+      return;
+    }
     if (!confirm('Delete this announcement?')) return
     try {
-      await db.deleteAnnouncement
+      await db.deleteAnnouncement(id)
       fetchAnnouncements()
     } catch (e) {
       console.error(e)
@@ -918,6 +926,10 @@ function GalleryManagement() {
   }
 
   const handleDelete = async (id) => {
+    if (!id) {
+      console.error('Invalid ID:', id);
+      return;
+    }
     if (!confirm('Delete this image?')) return
     try {
       await db.deleteImage(id)
