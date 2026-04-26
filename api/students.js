@@ -2,15 +2,17 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+let cachedConnection = null;
+
 async function connectDB() {
-  if (mongoose.connection.readyState === 0) {
-    try {
-      await mongoose.connect(MONGODB_URI);
-    } catch (e) {
-      console.error('MongoDB connection error:', e);
-    }
+  if (cachedConnection) return cachedConnection;
+  
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI not configured');
   }
-  return mongoose.connection;
+  
+  cachedConnection = await mongoose.connect(MONGODB_URI);
+  return cachedConnection;
 }
 
 const studentSchema = new mongoose.Schema({
@@ -36,6 +38,8 @@ function generateCredentials(name, rollNumber) {
 }
 
 export default async function handler(req, res) {
+  res.setHeader('Content-Type', 'application/json');
+  
   try {
     await connectDB();
     const Student = mongoose.models.Student || mongoose.model('Student', studentSchema);
