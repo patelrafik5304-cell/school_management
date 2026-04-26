@@ -29,14 +29,12 @@ function App() {
 
 function EntryPage() {
   const navigate = useNavigate();
-  const handleAdminLogin = (e) => { 
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAdminLogin = () => { 
+    console.log('Admin clicked');
     navigate('/login?role=admin'); 
   };
-  const handleStudentLogin = (e) => { 
-    e.preventDefault();
-    e.stopPropagation();
+  const handleStudentLogin = () => { 
+    console.log('Student clicked');
     navigate('/login?role=student'); 
   };
   
@@ -49,7 +47,7 @@ function EntryPage() {
         </div>
         <div style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem' }}>
           <button 
-            onClick={handleAdminLogin} 
+            onMouseDown={handleAdminLogin} 
             style={{ 
               width: '100%', 
               padding: '0.875rem', 
@@ -65,7 +63,7 @@ function EntryPage() {
             Admin Login
           </button>
           <button 
-            onClick={handleStudentLogin} 
+            onMouseDown={handleStudentLogin} 
             style={{ 
               width: '100%', 
               padding: '0.875rem', 
