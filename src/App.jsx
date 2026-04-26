@@ -878,8 +878,8 @@ function GalleryManagement() {
 
   const handleUpload = async (e) => {
     e.preventDefault()
-    if (!newImage.imageUrl) {
-      alert('Please enter an image URL')
+    if (!newImage.title || !newImage.imageUrl) {
+      alert('Please enter title and image URL')
       return
     }
     setUploading(true)
@@ -981,9 +981,6 @@ function GalleryManagement() {
                     placeholder="https://example.com/image.jpg"
                     required 
                   />
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem' }}>
-                    Paste an image link from the internet
-                  </p>
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={uploading}>
                   {uploading ? 'Uploading...' : 'Upload'}
