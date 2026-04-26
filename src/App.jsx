@@ -1288,6 +1288,7 @@ function StudentAnnouncements() {
 function StudentGallery() {
   const [images, setImages] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedImage, setSelectedImage] = useState(null)
 
   useEffect(() => {
     fetchImages()
@@ -1314,7 +1315,6 @@ function StudentGallery() {
           <Link to="/student/results" className="nav-link">Results</Link>
           <Link to="/student/announcements" className="nav-link">Notices</Link>
           <Link to="/student/gallery" className="nav-link">Gallery</Link>
-          <Link to="/student/gallery" className="nav-link">Gallery</Link>
           <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
         </div>
       </nav>
@@ -1322,19 +1322,61 @@ function StudentGallery() {
         <div className="page-header">
           <h1 className="page-title">Photo Gallery</h1>
         </div>
-        {loading ? <p>Loading...</p> : images.length === 0 ? <p style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>No images yet</p> : (
-          <div className="grid grid-3" style={{ marginTop: '1.5rem' }}>
+        {loading ? <p>Loading...</p> : images.length === 0 ? (
+          <p style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>No images yet</p>
+        ) : (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1.5rem', justifyContent: 'center' }}>
             {images.map(image => (
-              <div key={image.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <img src={image.url} alt={image.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
-                <div style={{ padding: '0.75rem' }}>
-                  <p style={{ margin: 0, fontWeight: 600 }}>{image.title}</p>
+              <div 
+                key={image.id} 
+                onClick={() => setSelectedImage(image)}
+                style={{ 
+                  width: '280px', 
+                  height: '220px', 
+                  borderRadius: '8px', 
+                  overflow: 'hidden', 
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+                }}
+              >
+                <img 
+                  src={image.url} 
+                  alt={image.title} 
+                  style={{ width: '100%', height: '180px', objectFit: 'cover' }} 
+                />
+                <div style={{ padding: '0.75rem', background: 'white', borderTop: '1px solid #e5e7eb' }}>
+                  <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: '#1f2937', textAlign: 'center' }}>{image.title}</p>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+      {selectedImage && (
+        <div 
+          onClick={() => setSelectedImage(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            cursor: 'pointer'
+          }}
+        >
+          <div style={{ maxWidth: '90%', maxHeight: '90%' }}>
+            <img 
+              src={selectedImage.url} 
+              alt={selectedImage.title} 
+              style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px' }} 
+            />
+            <p style={{ color: 'white', textAlign: 'center', marginTop: '1rem', fontSize: '1.25rem', fontWeight: 600 }}>{selectedImage.title}</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
