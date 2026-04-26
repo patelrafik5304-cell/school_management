@@ -13,7 +13,8 @@
     "mongoose": "^8.9.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0"
+    "react-router-dom": "^6.28.0",
+    "uploadthing": "^6.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
