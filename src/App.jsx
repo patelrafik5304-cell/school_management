@@ -28,62 +28,10 @@ function App() {
 }
 
 function EntryPage() {
-  const navigate = useNavigate();
-  const handleAdminLogin = () => { 
-    console.log('Admin clicked');
-    navigate('/login?role=admin'); 
-  };
-  const handleStudentLogin = () => { 
-    console.log('Student clicked');
-    navigate('/login?role=student'); 
-  };
-  
   return (
-    <div className="login-page">
+    <div className="login-page" onClick={() => console.log('page clicked')}>
       <div className="login-card">
-        <div className="login-header">
-          <h1 className="login-title">Prathmik Kumarshala</h1>
-          <p className="login-subtitle">Student Attendance Management System</p>
-        </div>
-        <div style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem' }}>
-          <button 
-            onMouseDown={handleAdminLogin} 
-            style={{ 
-              width: '100%', 
-              padding: '0.875rem', 
-              fontSize: '1rem',
-              background: '#2563eb',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 600
-            }}
-          >
-            Admin Login
-          </button>
-          <button 
-            onMouseDown={handleStudentLogin} 
-            style={{ 
-              width: '100%', 
-              padding: '0.875rem', 
-              fontSize: '1rem',
-              background: '#64748b',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 600
-            }}
-          >
-            Student Login
-          </button>
-        </div>
-        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
-            Welcome to Prathmik Kumarshala - Primary School Management System
-          </p>
-        </div>
+        <button onClick={() => alert('CLICK WORKS')}>TEST BUTTON</button>
       </div>
     </div>
   )
