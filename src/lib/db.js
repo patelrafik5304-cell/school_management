@@ -100,7 +100,13 @@ export async function deleteAnnouncement(id) {
 export async function getAllImages() {
   const q = query(imagesRef, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
+  const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  const seen = new Set();
+  return docs.filter(img => {
+    if (seen.has(img.id)) return false;
+    seen.add(img.id);
+    return true;
+  });
 }
 
 export async function addImage(data) {
