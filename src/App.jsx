@@ -944,27 +944,56 @@ function GalleryManagement() {
 
   const handleUpload = async (e) => {
     e.preventDefault()
+    if (uploading) {
+      console.log('Already uploading, ignoring')
+      return
+    }
     if (!newImage.title || (!selectedFile && !newImage.imageUrl)) {
       alert('Please enter title and select an image')
       return
     }
+    
+    // Check for duplicate title
+    if (images.some(img => img.title?.toLowerCase() === newImage.title.toLowerCase())) {
+      alert('An image with this title already exists')
+      return
+    }
+    
     setUploading(true)
+    console.log('Upload started:', newImage.title)
     try {
       let imageUrl = newImage.imageUrl
       if (selectedFile) {
         imageUrl = await uploadImage(selectedFile)
       }
-      await db.addImage({ title: newImage.title, description: newImage.description, tags: newImage.tags, imageUrl })
-      fetchImages()
-      setShowModal(false)
+      
+      await db.addImage({ 
+        title: newImage.title, 
+        description: newImage.description, 
+        tags: newImage.tags, 
+        imageUrl,
+        uploadedAt: new Date().toISOString()
+      })
+      console.log('Saved to database')
+      
+      // Reset form
       setNewImage({ title: '', description: '', tags: '' })
       setSelectedFile(null)
       setPreviewUrl(null)
+      setShowModal(false)
+      
+      // Reload after delay
+      setTimeout(async () => {
+        const freshData = await db.getAllImages()
+        setImages(freshData)
+      }, 300)
+      
     } catch (e) {
-      console.error(e)
-      alert('Upload failed')
+      console.error('Upload error:', e)
+      alert('Upload failed: ' + e.message)
     } finally {
       setUploading(false)
+      console.log('Upload finished')
     }
   }
 
