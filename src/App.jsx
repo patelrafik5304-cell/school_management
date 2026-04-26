@@ -399,14 +399,14 @@ function StudentManagement() {
               </thead>
               <tbody>
                 {students.map(student => (
-                  <tr key={student._id}>
+                  <tr key={student.id}>
                     <td>{student.rollNumber}</td>
                     <td>{student.name}</td>
                     <td>{student.class}</td>
                     <td>{student.username || '-'}</td>
                     <td><span className="badge badge-success">{student.status || 'Active'}</span></td>
                     <td>
-                      <button style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }} onClick={() => handleDelete(student._id)}>Delete</button>
+                      <button style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }} onClick={() => handleDelete(student.id)}>Delete</button>
                     </td>
                   </tr>
                 ))}

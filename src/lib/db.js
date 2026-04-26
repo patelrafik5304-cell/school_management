@@ -26,7 +26,7 @@ export const imagesRef = collection(db, 'images');
 export async function getAllStudents() {
   const q = query(studentsRef, orderBy('rollNumber'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
 export async function addStudent(data) {
@@ -52,39 +52,39 @@ export async function loginStudent(username, password) {
 export async function getAllAttendance(date) {
   const q = query(attendanceRef, where('date', '==', date));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
 export async function addAttendance(data) {
   const docRef = await addDoc(attendanceRef, data);
-  return { id: docRef.id, ...data };
+  return { id: docRef.id, _id: docRef.id, ...data };
 }
 
 export async function getAllResults() {
   const q = query(resultsRef, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
 export async function addResult(data) {
   const docRef = await addDoc(resultsRef, { ...data, createdAt: new Date() });
-  return { id: docRef.id, ...data };
+  return { id: docRef.id, _id: docRef.id, ...data };
 }
 
 export async function getAllStaff() {
   const snapshot = await getDocs(staffRef);
-  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
 export async function getAllAnnouncements() {
   const q = query(announcementsRef, orderBy('date', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
 export async function addAnnouncement(data) {
   const docRef = await addDoc(announcementsRef, { ...data, date: new Date() });
-  return { id: docRef.id, ...data };
+  return { id: docRef.id, _id: docRef.id, ...data };
 }
 
 export async function deleteAnnouncement(id) {
@@ -94,12 +94,12 @@ export async function deleteAnnouncement(id) {
 export async function getAllImages() {
   const q = query(imagesRef, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
 export async function addImage(data) {
   const docRef = await addDoc(imagesRef, { ...data, createdAt: new Date() });
-  return { id: docRef.id, ...data };
+  return { id: docRef.id, _id: docRef.id, ...data };
 }
 
 export async function deleteImage(id) {
