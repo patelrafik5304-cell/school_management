@@ -719,7 +719,6 @@ function ResultsManagement() {
     fetchStudents()
   }, [])
 
-  const isAuthorizedUploader = ['admin'].includes(localStorage.getItem('userRole'))
   const classOptions = Array.from(new Set(students.map(student => student.class).filter(Boolean))).sort()
   const validPreviewRows = bulkPreview.filter(row => row.errors.length === 0)
   const invalidPreviewRows = bulkPreview.length - validPreviewRows.length
@@ -746,7 +745,6 @@ function ResultsManagement() {
 
   const handleAddResult = async (e) => {
     e.preventDefault()
-    if (!isAuthorizedUploader) return
     try {
       const student = students.find(item => item.id === newResult.studentId)
       if (!student) {
@@ -814,11 +812,7 @@ function ResultsManagement() {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    if (!isAuthorizedUploader) {
-      setCsvMessage('No result declared yet.')
-      return
-    }
-
+    
     try {
       const rows = await readResultFile(file)
       if (rows.length < 2) {
@@ -837,10 +831,6 @@ function ResultsManagement() {
   }
 
   const submitBulkResults = async () => {
-    if (!isAuthorizedUploader) {
-      setCsvMessage('Only authorized admins can publish results.')
-      return
-    }
     if (validPreviewRows.length === 0) {
       setCsvMessage('No valid rows to submit.')
       return
@@ -881,7 +871,6 @@ function ResultsManagement() {
   }
 
   const publishResult = async (resultId) => {
-    if (!isAuthorizedUploader) return
     try {
       await (await getDbApi()).updateResult(resultId, { status: 'published', publishedAt: new Date() })
       await fetchResults()
@@ -891,7 +880,6 @@ function ResultsManagement() {
   }
 
   const deleteResult = async (resultId) => {
-    if (!isAuthorizedUploader) return
     if (!window.confirm('Are you sure you want to delete this record?')) return
     try {
       await (await getDbApi()).deleteResult(resultId)
@@ -916,7 +904,7 @@ function ResultsManagement() {
 
   const updateResult = async (e) => {
     e.preventDefault()
-    if (!isAuthorizedUploader || !editingResult) return
+    if (!editingResult) return
     try {
       const marks = Number(newResult.marks)
       const maxMarks = Number(newResult.maxMarks) || 100
@@ -936,20 +924,6 @@ function ResultsManagement() {
     } catch (e) {
       console.error(e)
     }
-  }
-
-  if (!isAuthorizedUploader) {
-    return (
-      <div className="app">
-        <AppNavbar variant="admin" />
-        <div className="container">
-          <div className="card">
-            <h1 className="page-title">Results</h1>
-            <p>No result declared yet.</p>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
