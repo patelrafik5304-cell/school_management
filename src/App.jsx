@@ -281,6 +281,9 @@ function AdminDashboard() {
         <div className="page-header">
           <h1 className="page-title">Admin Dashboard</h1>
         </div>
+        <p style={{padding: '1rem', background: '#f0f9ff', borderRadius: '8px', marginBottom: '1rem'}}>
+          Debug: AdminDashboard loaded. Students: {stats.students}, Staff: {stats.staff}
+        </p>
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-value">{stats.students}</div>
