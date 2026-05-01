@@ -125,6 +125,7 @@ function LoginPage() {
       setLoading(true)
       try {
         const student = await db.loginStudent(username, password)
+        console.log('Student login successful:', student)
         localStorage.setItem('studentId', student.id)
         localStorage.setItem('studentName', student.name)
         localStorage.setItem('studentClass', student.class)
@@ -1339,6 +1340,7 @@ function GalleryManagement() {
 function StudentDashboard() {
   const studentId = localStorage.getItem('studentId')
   const studentName = localStorage.getItem('studentName') || 'Student'
+  console.log('StudentDashboard - studentId:', studentId, 'studentName:', studentName)
   const [stats, setStats] = useState({ percentage: 0, present: 0, absent: 0 })
   const [notices, setNotices] = useState(0)
   const [results, setResults] = useState([])
