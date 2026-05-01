@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import './index.css'
 import * as db from './lib/db'
 import { uploadImage } from './lib/storage'
@@ -9,7 +9,7 @@ const anime = window.anime
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<EntryPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -27,7 +27,7 @@ function App() {
         <Route path="/student/gallery" element={<StudentGallery />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
@@ -729,6 +729,17 @@ function getGrade(marks) {
   return 'D'
 }
 
+function resultBelongsToStudent(result, studentName, studentClass) {
+  const resultName = String(result.studentName || '').trim().toLowerCase()
+  const resultClass = String(result.studentClass || '').trim().toLowerCase()
+  const name = String(studentName || '').trim().toLowerCase()
+  const className = String(studentClass || '').trim().toLowerCase()
+
+  if (!name) return false
+  if (resultName !== name) return false
+  return !className || !resultClass || resultClass === className
+}
+
 function StaffManagement() {
   const [staff, setStaff] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1369,7 +1380,8 @@ function StudentDashboard() {
       setStats({ percentage, present, absent })
 
       const allResults = await db.getAllResults()
-      setResults(allResults.slice(0, 3))
+      const studentResults = allResults.filter(result => resultBelongsToStudent(result, student.name, student.class))
+      setResults(studentResults.slice(0, 3))
 
       const allNotices = await db.getAllAnnouncements()
       setNotices(allNotices.length)
@@ -1507,6 +1519,26 @@ const fetchAttendance = async () => {
 }
 
 function MyResults() {
+  const studentName = localStorage.getItem('studentName') || ''
+  const studentClass = localStorage.getItem('studentClass') || ''
+  const [results, setResults] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchResults()
+  }, [])
+
+  const fetchResults = async () => {
+    try {
+      const allResults = await db.getAllResults()
+      setResults(allResults.filter(result => resultBelongsToStudent(result, studentName, studentClass)))
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="app">
       <nav className="navbar">
@@ -1525,20 +1557,28 @@ function MyResults() {
           <h1 className="page-title">My Results</h1>
         </div>
         <div className="card">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Subject</th>
-                <th>Marks</th>
-                <th>Grade</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>Mathematics</td><td>85</td><td><span className="badge badge-success">A</span></td></tr>
-              <tr><td>English</td><td>78</td><td><span className="badge badge-success">B+</span></td></tr>
-              <tr><td>Science</td><td>92</td><td><span className="badge badge-success">A+</span></td></tr>
-            </tbody>
-          </table>
+          {loading ? <p>Loading...</p> : results.length === 0 ? (
+            <p style={{ padding: '1rem', color: 'var(--text-light)' }}>No results published yet</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Subject</th>
+                  <th>Marks</th>
+                  <th>Grade</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map(result => (
+                  <tr key={result.id || result._id}>
+                    <td>{result.subject}</td>
+                    <td>{result.marks}{result.maxMarks ? `/${result.maxMarks}` : ''}</td>
+                    <td><span className="badge badge-success">{getGrade(Number(result.marks))}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
