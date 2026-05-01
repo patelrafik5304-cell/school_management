@@ -220,28 +220,22 @@ function LoginPage() {
 }
 
 function AdminDashboard() {
+  console.log('AdminDashboard rendered')
   const [stats, setStats] = useState({ students: 0, staff: 0, announcements: 0, attendance: 0 })
   const [announcements, setAnnouncements] = useState([])
   const [animated, setAnimated] = useState(false)
 
   useEffect(() => {
+    console.log('Fetching counts...')
     fetchStudentsCount()
     fetchStaffCount()
     fetchAnnouncements()
   }, [])
 
   useEffect(() => {
-    if (!animated && stats.students > 0) {
+    if (stats.students > 0 && !animated) {
+      console.log('Stats loaded, animating...')
       setAnimated(true)
-      // Animate stat cards on load
-      anime({
-        targets: '.stat-card',
-        translateY: [20, 0],
-        opacity: [0, 1],
-        easing: 'easeOutExpo',
-        duration: 800,
-        delay: anime.stagger(100)
-      })
     }
   }, [stats, animated])
 
