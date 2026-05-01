@@ -1938,10 +1938,11 @@ function StudentDashboard() {
       const attendance = await (await getDbApi()).getAttendanceByStudent(studentId)
       const present = attendance.filter(a => a.status === 'Present').length
       const absent = attendance.filter(a => a.status === 'Absent').length
-      const holiday = attendance.filter(a => a.status === 'Holiday' || a.status === 'National Holiday').length
-      const total = present + absent + holiday
-      const percentage = total > 0 ? Math.round((present / total) * 100) : 0
-      setStats({ percentage, present, absent, holiday })
+      const noAttendance = attendance.filter(a => !a.status || (a.status !== 'Present' && a.status !== 'Absent')).length
+      const total = present + absent + noAttendance
+      const attendanceTotal = present + absent
+      const percentage = attendanceTotal > 0 ? Math.round((present / attendanceTotal) * 100) : 0
+      setStats({ percentage, present, absent, noAttendance })
 
       const studentResults = await (await getDbApi()).getPublishedResultsByStudent(studentId)
       setResults(studentResults.slice(0, 3))
@@ -1990,7 +1991,7 @@ function StudentDashboard() {
             <PieChart3D
               present={stats.present}
               absent={stats.absent}
-              holiday={stats.holiday}
+              noAttendance={stats.noAttendance}
             />
           </div>
         )}
@@ -2033,10 +2034,11 @@ const fetchAttendance = async () => {
       const allAttendance = await (await getDbApi()).getAttendanceByStudent(studentId)
       const present = allAttendance.filter(a => a.status === 'Present').length
       const absent = allAttendance.filter(a => a.status === 'Absent').length
-      const holiday = allAttendance.filter(a => a.status === 'Holiday' || a.status === 'National Holiday').length
-      const total = present + absent + holiday
-      const percentage = total > 0 ? Math.round((present / total) * 100) : 0
-      setAttendanceData({ present, absent, holiday, total, percentage })
+      const noAttendance = allAttendance.filter(a => !a.status || (a.status !== 'Present' && a.status !== 'Absent')).length
+      const total = present + absent + noAttendance
+      const attendanceTotal = present + absent
+      const percentage = attendanceTotal > 0 ? Math.round((present / attendanceTotal) * 100) : 0
+      setAttendanceData({ present, absent, noAttendance, total, percentage })
     } catch (e) {
       console.error(e)
     } finally {
@@ -2066,10 +2068,10 @@ const fetchAttendance = async () => {
               <div className="stat-value">{attendanceData.absent}</div>
               <div className="stat-label">Days Absent</div>
             </div>
-            {attendanceData.holiday > 0 && (
+            {attendanceData.noAttendance > 0 && (
               <div className="stat-card">
-                <div className="stat-value">{attendanceData.holiday}</div>
-                <div className="stat-label">Holidays</div>
+                <div className="stat-value">{attendanceData.noAttendance}</div>
+                <div className="stat-label">No Attendance</div>
               </div>
             )}
           </div>
@@ -2078,7 +2080,7 @@ const fetchAttendance = async () => {
               <PieChart3D
                 present={attendanceData.present}
                 absent={attendanceData.absent}
-                holiday={attendanceData.holiday}
+                noAttendance={attendanceData.noAttendance}
               />
             </div>
           )}

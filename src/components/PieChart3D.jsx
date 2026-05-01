@@ -3,21 +3,22 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 const COLORS = {
   present: { fill: '#10b981', shadow: '#059669', label: 'Present' },
   absent: { fill: '#ef4444', shadow: '#dc2626', label: 'Absent' },
-  holiday: { fill: '#f97316', shadow: '#ea580c', label: 'Holiday' },
+  noAttendance: { fill: '#f97316', shadow: '#ea580c', label: 'No Attendance' },
 }
 
-function PieChart3D({ present = 0, absent = 0, holiday = 0 }) {
-  const total = present + absent + holiday
+function PieChart3D({ present = 0, absent = 0, noAttendance = 0 }) {
+  const total = present + absent + noAttendance
+  const attendanceTotal = present + absent
   const [animated, setAnimated] = useState(false)
   const [hoveredSlice, setHoveredSlice] = useState(null)
   const chartRef = useRef(null)
 
-  const getPercent = (val) => (total > 0 ? ((val / total) * 100).toFixed(1) : 0)
+  const getPercent = (val) => (attendanceTotal > 0 ? ((val / attendanceTotal) * 100).toFixed(1) : 0)
 
   const slices = total > 0 ? [
     { key: 'present', value: present, ...COLORS.present },
     { key: 'absent', value: absent, ...COLORS.absent },
-    { key: 'holiday', value: holiday, ...COLORS.holiday },
+    { key: 'noAttendance', value: noAttendance, ...COLORS.noAttendance },
   ].filter(s => s.value > 0) : []
 
   const createSlicePath = useCallback((startAngle, endAngle, radius, offset = 0) => {
@@ -147,7 +148,7 @@ function PieChart3D({ present = 0, absent = 0, holiday = 0 }) {
                     transform: hoveredSlice === i ? 'translate(0, -4px)' : 'none',
                   }}
                 />
-                {parseFloat(percent) >= 5 && (
+                {slice.key !== 'noAttendance' && parseFloat(percent) >= 5 && (
                   <text
                     x={labelPos.x}
                     y={labelPos.y}
@@ -173,7 +174,7 @@ function PieChart3D({ present = 0, absent = 0, holiday = 0 }) {
           {/* Inner circle for donut effect */}
           <circle cx="200" cy="200" r={radius * 0.55} fill="rgba(255,255,255,0.95)" style={{ backdropFilter: 'blur(10px)' }} />
           <text x="200" y="185" textAnchor="middle" fill="#1e293b" fontSize="32" fontWeight="800" style={{ opacity: animated ? 1 : 0, transition: 'opacity 0.8s 0.6s' }}>
-            {total > 0 ? `${Math.round((present / total) * 100)}%` : '0%'}
+            {attendanceTotal > 0 ? `${Math.round((present / attendanceTotal) * 100)}%` : '0%'}
           </text>
           <text x="200" y="210" textAnchor="middle" fill="#64748b" fontSize="13" fontWeight="500" style={{ opacity: animated ? 1 : 0, transition: 'opacity 0.8s 0.8s' }}>
             Attendance
