@@ -114,14 +114,28 @@ export async function getAllStaff() {
 }
 
 export async function getAllAnnouncements() {
+  const now = new Date();
   const q = query(announcementsRef, orderBy('date', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
+  const announcements = snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
+  
+  // Filter out expired announcements and delete them
+  const validAnnouncements = [];
+  for (const ann of announcements) {
+    if (ann.expiresAt && new Date(ann.expiresAt) < now) {
+      await deleteDoc(doc(db, 'announcements', ann.id)).catch(e => console.error('Failed to delete expired announcement:', e));
+    } else {
+      validAnnouncements.push(ann);
+    }
+  }
+  return validAnnouncements;
 }
 
 export async function addAnnouncement(data) {
-  const docRef = await addDoc(announcementsRef, { ...data, date: new Date() });
-  return { id: docRef.id, _id: docRef.id, ...data };
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+  const docRef = await addDoc(announcementsRef, { ...data, date: new Date(), expiresAt });
+  return { id: docRef.id, _id: docRef.id, ...data, expiresAt };
 }
 
 export async function deleteAnnouncement(id) {
