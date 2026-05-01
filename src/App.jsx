@@ -103,6 +103,7 @@ function LoginPage() {
     if (roleParam === 'admin' || roleParam === 'student') {
       setRole(roleParam)
     }
+    console.log('LoginPage loaded, role:', roleParam)
   }, [searchParams])
 
   const handleLogin = async (e) => {
