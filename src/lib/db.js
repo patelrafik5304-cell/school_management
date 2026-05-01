@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, where } from "firebase/firestore";
+import { getFirestore, collection, getDocs, getDoc, addDoc, deleteDoc, doc, query, orderBy, where } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAqlHLlwyO4Q0CeowDoV_8dtzI_Mni7pIE",
@@ -105,9 +105,32 @@ export async function deleteAnnouncement(id) {
 
 export async function getAllImages() {
   const snapshot = await getDocs(imagesRef);
-  const all = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  const all = snapshot.docs.map(d => {
+    const data = d.data();
+    const source = data.imageUrl || data.url || '';
+    return {
+      id: d.id,
+      _id: d.id,
+      ...data,
+      url: source,
+      imageUrl: source
+    };
+  });
   const map = new Map();
-  all.forEach(img => map.set(img.id, img));
+  all.forEach(img => {
+    const key = img.imageUrl || img.url || img.id;
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, img);
+      return;
+    }
+
+    const existingScore = Number(Boolean(existing.description)) + Number(Boolean(existing.tags)) + Number(Boolean(existing.uploadedAt)) + Number(Boolean(existing.imageUrl));
+    const currentScore = Number(Boolean(img.description)) + Number(Boolean(img.tags)) + Number(Boolean(img.uploadedAt)) + Number(Boolean(img.imageUrl));
+    if (currentScore >= existingScore) {
+      map.set(key, { ...existing, ...img, url: key, imageUrl: key });
+    }
+  });
   return Array.from(map.values());
 }
 
