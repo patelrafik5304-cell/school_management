@@ -843,7 +843,7 @@ function ResultsManagement() {
     event.target.value = ''
     if (!file) return
     if (!isAuthorizedUploader) {
-      setCsvMessage('Only authorized admins or teachers can upload results.')
+      setCsvMessage('No result declared yet.')
       return
     }
 
@@ -924,8 +924,8 @@ function ResultsManagement() {
         <AppNavbar variant="admin" />
         <div className="container">
           <div className="card">
-            <h1 className="page-title">Access Restricted</h1>
-            <p>Only authorized admins or teachers can upload and manage student results.</p>
+            <h1 className="page-title">Results</h1>
+            <p>No result declared yet.</p>
           </div>
         </div>
       </div>
@@ -2051,7 +2051,7 @@ function StudentDashboard() {
         <div className="grid grid-2" style={{ marginTop: '2rem' }}>
           <div className="card">
             <h3 className="card-header">My Recent Results</h3>
-            {results.length === 0 ? <p style={{ padding: '1rem', color: '#64748b' }}>No results yet</p> : results.map(result => (
+            {results.length === 0 ? <p style={{ padding: '1rem', color: '#64748b' }}>No result declared yet</p> : results.map(result => (
               <div key={result.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}>
                 <span>{result.subject}</span>
                 <span className="badge badge-success">{result.marks} ({getGrade(Number(result.marks))})</span>
@@ -2183,7 +2183,7 @@ function MyResults() {
         </div>
         <div className="card">
           {loading ? <p>Loading...</p> : results.length === 0 ? (
-            <p style={{ padding: '1rem', color: 'var(--text-light)' }}>No results published yet</p>
+            <p style={{ padding: '1rem', color: 'var(--text-light)' }}>No result declared yet</p>
           ) : (
             <div className="marksheet-list">
               {resultGroups.map(group => (
