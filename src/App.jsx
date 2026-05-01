@@ -44,25 +44,8 @@ function EntryPage() {
             src="/education-rights-banner.png"
             alt="Education rights banner"
           />
-          <p className="login-subtitle">Student Attendance Management System</p>
         </div>
         <div style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem' }}>
-          <button 
-            onClick={() => navigate('/login?role=admin')} 
-            style={{ 
-              width: '100%', 
-              padding: '0.875rem', 
-              fontSize: '1rem',
-              background: '#2563eb',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: 600
-            }}
-          >
-            Admin Login
-          </button>
           <button 
             onClick={() => navigate('/login?role=student')} 
             style={{ 
