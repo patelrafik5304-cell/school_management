@@ -805,15 +805,79 @@ textarea {
   max-width: 100%;
 }
 
-/* =============================================
-   ADVANCED ANIMATIONS
-   ============================================= */
-
-/* Animation Keyframes */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Simple CSS Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+.stagger-6 { animation-delay: 300ms; }
+.stagger-7 { animation-delay: 350ms; }
+.stagger-8 { animation-delay: 400ms; }
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+/* Stat cards stagger animation */
+.stat-card:nth-child(1) { animation: fadeInUp 0.4s ease-out 0ms forwards; opacity: 0; }
+.stat-card:nth-child(2) { animation: fadeInUp 0.4s ease-out 100ms forwards; opacity: 0; }
+.stat-card:nth-child(3) { animation: fadeInUp 0.4s ease-out 200ms forwards; opacity: 0; }
+.stat-card:nth-child(4) { animation: fadeInUp 0.4s ease-out 300ms forwards; opacity: 0; }
+
+/* Table rows fade in */
+tbody tr {
+  opacity: 0;
+  animation: fadeInLeft 0.3s ease-out forwards;
+}
+
+tbody tr:nth-child(1) { animation-delay: 0ms; }
+tbody tr:nth-child(2) { animation-delay: 50ms; }
+tbody tr:nth-child(3) { animation-delay: 100ms; }
+tbody tr:nth-child(4) { animation-delay: 150ms; }
+tbody tr:nth-child(5) { animation-delay: 200ms; }
+tbody tr:nth-child(6) { animation-delay: 250ms; }
+tbody tr:nth-child(7) { animation-delay: 300ms; }
+tbody tr:nth-child(8) { animation-delay: 350ms; }
+tbody tr:nth-child(9) { animation-delay: 400ms; }
+tbody tr:nth-child(10) { animation-delay: 450ms; }
+
+/* Gallery items scale in */
+.gallery-item {
+  opacity: 0;
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.gallery-item:nth-child(1) { animation-delay: 0ms; }
+.gallery-item:nth-child(2) { animation-delay: 75ms; }
+.gallery-item:nth-child(3) { animation-delay: 150ms; }
+.gallery-item:nth-child(4) { animation-delay: 225ms; }
+.gallery-item:nth-child(5) { animation-delay: 300ms; }
+.gallery-item:nth-child(6) { animation-delay: 375ms; }
+.gallery-item:nth-child(7) { animation-delay: 450ms; }
+.gallery-item:nth-child(8) { animation-delay: 525ms; }
 
 @keyframes fadeInUp {
   from {

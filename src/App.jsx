@@ -192,13 +192,15 @@ function LoginPage() {
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter Password"
-            />
+<input 
+                        type="password" 
+                        className="form-input" 
+                        value={password} 
+                        onChange={e => setPassword(e.target.value)}
+                        placeholder="Enter Password"
+                        autoComplete="current-password"
+                        required 
+                      />
           </div>
           {error && <p className="form-error">{error}</p>}
           <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
