@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import './index.css'
-import * as db from './lib/db'
-import { uploadImage } from './lib/storage'
 
 // Anime.js loaded globally from CDN
 const anime = window.anime
+
+let dbApiPromise
+let storageApiPromise
+
+function getDbApi() {
+  if (!dbApiPromise) dbApiPromise = import('./lib/db')
+  return dbApiPromise
+}
+
+function getStorageApi() {
+  if (!storageApiPromise) storageApiPromise = import('./lib/storage')
+  return storageApiPromise
+}
 
 function App() {
   return (
@@ -112,7 +123,7 @@ function LoginPage() {
     } else {
       setLoading(true)
       try {
-        const student = await db.loginStudent(username, password)
+        const student = await (await getDbApi()).loginStudent(username, password)
         console.log('Student login successful:', student)
         localStorage.setItem('studentId', student.id)
         localStorage.setItem('studentName', student.name)
@@ -235,21 +246,21 @@ function AdminDashboard() {
 
   const fetchStudentsCount = async () => {
     try {
-      const students = await db.getAllStudents()
+      const students = await (await getDbApi()).getAllStudents()
       setStats(prev => ({ ...prev, students: students.length }))
     } catch (e) { console.error(e) }
   }
 
   const fetchStaffCount = async () => {
     try {
-      const staff = await db.getAllStaff()
+      const staff = await (await getDbApi()).getAllStaff()
       setStats(prev => ({ ...prev, staff: staff.length }))
     } catch (e) { console.error(e) }
   }
 
   const fetchAnnouncements = async () => {
     try {
-      const announcements = await db.getAllAnnouncements()
+      const announcements = await (await getDbApi()).getAllAnnouncements()
       setAnnouncements(announcements.slice(0, 3))
       setStats(prev => ({ ...prev, announcements: announcements.length }))
     } catch (e) { console.error(e) }
@@ -339,7 +350,7 @@ function StudentManagement() {
 
   const fetchStudents = async () => {
     try {
-      const students = await db.getAllStudents()
+      const students = await (await getDbApi()).getAllStudents()
       setStudents(students)
     } catch (e) {
       console.error(e)
@@ -352,7 +363,7 @@ function StudentManagement() {
     e.preventDefault()
     setError('')
     try {
-      const result = await db.addStudent(newStudent)
+      const result = await (await getDbApi()).addStudent(newStudent)
       setGeneratedCredentials({ username: result.username, password: result.password })
       fetchStudents()
       setNewStudent({ name: '', class: '', rollNumber: '' })
@@ -369,7 +380,7 @@ function StudentManagement() {
     }
     if (!confirm('Delete this student?')) return
     try {
-      await db.deleteStudent(id)
+      await (await getDbApi()).deleteStudent(id)
       fetchStudents()
     } catch (e) {
       console.error(e)
@@ -502,10 +513,10 @@ function AttendanceManagement() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const data = await db.getAllStudents()
+      const data = await (await getDbApi()).getAllStudents()
       setStudents(data)
 
-      const attData = await db.getAllAttendance(date)
+      const attData = await (await getDbApi()).getAllAttendance(date)
       const attMap = {}
       attData.forEach(a => { attMap[a.studentId] = a.status })
       setAttendance(attMap)
@@ -518,7 +529,7 @@ function AttendanceManagement() {
 
   const markAttendance = async (studentId, status) => {
     try {
-      await db.addAttendance({ studentId, date, status })
+      await (await getDbApi()).addAttendance({ studentId, date, status })
       setAttendance(prev => ({ ...prev, [studentId]: status }))
     } catch (e) {
       console.error(e)
@@ -609,7 +620,7 @@ function ResultsManagement() {
 
   const fetchResults = async () => {
     try {
-      const data = await db.getAllResults()
+      const data = await (await getDbApi()).getAllResults()
       setResults(data)
     } catch (e) {
       console.error(e)
@@ -621,7 +632,7 @@ function ResultsManagement() {
   const handleAddResult = async (e) => {
     e.preventDefault()
     try {
-      await db.addResult(newResult)
+      await (await getDbApi()).addResult(newResult)
       fetchResults()
       setShowModal(false)
       setNewResult({ studentName: '', studentClass: '', subject: '', marks: '' })
@@ -743,7 +754,7 @@ function StaffManagement() {
 
   const fetchStaff = async () => {
     try {
-      const data = await db.getAllStaff()
+      const data = await (await getDbApi()).getAllStaff()
       setStaff(data)
     } catch (e) {
       console.error(e)
@@ -806,7 +817,7 @@ function Announcements() {
 
   const fetchAnnouncements = async () => {
     try {
-      const data = await db.getAllAnnouncements()
+      const data = await (await getDbApi()).getAllAnnouncements()
       setAnnouncements(data)
     } catch (e) {
       console.error(e)
@@ -818,7 +829,7 @@ function Announcements() {
   const handlePost = async (e) => {
     e.preventDefault()
     try {
-      await db.addAnnouncement(newAnnouncement)
+      await (await getDbApi()).addAnnouncement(newAnnouncement)
       fetchAnnouncements()
       setShowModal(false)
       setNewAnnouncement({ title: '', content: '', priority: 'Normal' })
@@ -834,7 +845,7 @@ function Announcements() {
     }
     if (!confirm('Delete this announcement?')) return
     try {
-      await db.deleteAnnouncement(id)
+      await (await getDbApi()).deleteAnnouncement(id)
       fetchAnnouncements()
     } catch (e) {
       console.error(e)
@@ -923,7 +934,7 @@ function GalleryManagement() {
 
   const fetchImages = async () => {
     try {
-      const data = await db.getAllImages()
+      const data = await (await getDbApi()).getAllImages()
       const uniqueIds = new Set()
       const unique = data.filter(img => {
         if (uniqueIds.has(img.id)) return false
@@ -988,10 +999,10 @@ function GalleryManagement() {
     try {
       let imageUrl = newImage.imageUrl
       if (selectedFile) {
-        imageUrl = await uploadImage(selectedFile)
+        imageUrl = await (await getStorageApi()).uploadImage(selectedFile)
       }
       
-      await db.addImage({ 
+      await (await getDbApi()).addImage({ 
         title: newImage.title, 
         description: newImage.description, 
         tags: newImage.tags, 
@@ -1008,7 +1019,7 @@ function GalleryManagement() {
       
       // Reload after delay
       setTimeout(async () => {
-        const freshData = await db.getAllImages()
+        const freshData = await (await getDbApi()).getAllImages()
         setImages(freshData)
       }, 300)
       
@@ -1024,7 +1035,7 @@ function GalleryManagement() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this image?')) return
     try {
-      await db.deleteImage(id)
+      await (await getDbApi()).deleteImage(id)
       fetchImages()
     } catch (e) {
       console.error(e)
@@ -1039,7 +1050,7 @@ function GalleryManagement() {
     if (!confirm(`Delete ${selectedImages.length} images?`)) return
     try {
       for (const id of selectedImages) {
-        await db.deleteImage(id)
+        await (await getDbApi()).deleteImage(id)
       }
       setSelectedImages([])
       fetchImages()
@@ -1361,22 +1372,22 @@ function StudentDashboard() {
     if (!studentId) return
     try {
       // Fetch student details to ensure we have the name
-      const student = await db.getStudentById(studentId)
+      const student = await (await getDbApi()).getStudentById(studentId)
       console.log('Fetched student:', student)
       setStudentName(student.name || 'Student')
       
-      const attendance = await db.getAttendanceByStudent(studentId)
+      const attendance = await (await getDbApi()).getAttendanceByStudent(studentId)
       const present = attendance.filter(a => a.status === 'Present').length
       const absent = attendance.filter(a => a.status === 'Absent').length
       const total = present + absent
       const percentage = total > 0 ? Math.round((present / total) * 100) : 0
       setStats({ percentage, present, absent })
 
-      const allResults = await db.getAllResults()
+      const allResults = await (await getDbApi()).getAllResults()
       const studentResults = allResults.filter(result => resultBelongsToStudent(result, student.name, student.class))
       setResults(studentResults.slice(0, 3))
 
-      const allNotices = await db.getAllAnnouncements()
+      const allNotices = await (await getDbApi()).getAllAnnouncements()
       setNotices(allNotices.length)
     } catch (e) {
       console.error(e)
@@ -1458,7 +1469,7 @@ function MyAttendance() {
 const fetchAttendance = async () => {
     if (!studentId) return
     try {
-      const allAttendance = await db.getAttendanceByStudent(studentId)
+      const allAttendance = await (await getDbApi()).getAttendanceByStudent(studentId)
       const present = allAttendance.filter(a => a.status === 'Present').length
       const absent = allAttendance.filter(a => a.status === 'Absent').length
       const total = present + absent
@@ -1523,7 +1534,7 @@ function MyResults() {
 
   const fetchResults = async () => {
     try {
-      const allResults = await db.getAllResults()
+      const allResults = await (await getDbApi()).getAllResults()
       setResults(allResults.filter(result => resultBelongsToStudent(result, studentName, studentClass)))
     } catch (e) {
       console.error(e)
@@ -1588,7 +1599,7 @@ function StudentAnnouncements() {
 
   const fetchAnnouncements = async () => {
     try {
-      const data = await db.getAllAnnouncements()
+      const data = await (await getDbApi()).getAllAnnouncements()
       setAnnouncements(data)
     } catch (e) {
       console.error(e)
@@ -1643,7 +1654,7 @@ function StudentGallery() {
 
   const fetchImages = async () => {
     try {
-      const data = await db.getAllImages()
+      const data = await (await getDbApi()).getAllImages()
       setImages(data)
     } catch (e) {
       console.error(e)
@@ -1729,3 +1740,4 @@ function StudentGallery() {
 }
 
 export default App
+
