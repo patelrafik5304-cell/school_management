@@ -934,7 +934,7 @@ function GalleryManagement() {
 
   const fetchImages = async () => {
     try {
-      const data = await (await getDbApi()).getAllImages()
+      const data = await (await getDbApi()).getAllImages(24)
       const uniqueIds = new Set()
       const unique = data.filter(img => {
         if (uniqueIds.has(img.id)) return false
@@ -1019,7 +1019,7 @@ function GalleryManagement() {
       
       // Reload after delay
       setTimeout(async () => {
-        const freshData = await (await getDbApi()).getAllImages()
+        const freshData = await (await getDbApi()).getAllImages(24)
         setImages(freshData)
       }, 300)
       
@@ -1146,6 +1146,7 @@ function GalleryManagement() {
                     src={image.url || image.imageUrl} 
                     alt={image.title} 
                     loading="lazy"
+                    decoding="async"
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                   <div style={{ 
@@ -1654,7 +1655,7 @@ function StudentGallery() {
 
   const fetchImages = async () => {
     try {
-      const data = await (await getDbApi()).getAllImages()
+      const data = await (await getDbApi()).getAllImages(24)
       setImages(data)
     } catch (e) {
       console.error(e)
@@ -1699,8 +1700,10 @@ function StudentGallery() {
                 }}
               >
                 <img 
-                  src={image.url} 
+                  src={image.url || image.imageUrl} 
                   alt={image.title} 
+                  loading="lazy"
+                  decoding="async"
                   style={{ width: '100%', height: '180px', objectFit: 'cover' }} 
                 />
                 <div style={{ padding: '0.75rem', background: 'white', borderTop: '1px solid #e5e7eb' }}>
@@ -1727,7 +1730,7 @@ function StudentGallery() {
         >
           <div style={{ maxWidth: '90%', maxHeight: '90%' }}>
             <img 
-              src={selectedImage.url} 
+              src={selectedImage.url || selectedImage.imageUrl} 
               alt={selectedImage.title} 
               style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: '8px' }} 
             />
@@ -1740,4 +1743,5 @@ function StudentGallery() {
 }
 
 export default App
+
 

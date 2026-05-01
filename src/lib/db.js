@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, getDoc, addDoc, deleteDoc, doc, query, orderBy, where } from "firebase/firestore";
+import { getFirestore, collection, getDocs, getDoc, addDoc, deleteDoc, doc, query, orderBy, where, limit as firestoreLimit } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAqlHLlwyO4Q0CeowDoV_8dtzI_Mni7pIE",
@@ -103,8 +103,9 @@ export async function deleteAnnouncement(id) {
   await deleteDoc(doc(db, 'announcements', id));
 }
 
-export async function getAllImages() {
-  const snapshot = await getDocs(imagesRef);
+export async function getAllImages(maxItems = 24) {
+  const q = query(imagesRef, orderBy('createdAt', 'desc'), firestoreLimit(maxItems));
+  const snapshot = await getDocs(q);
   const all = snapshot.docs.map(d => {
     const data = d.data();
     const source = data.imageUrl || data.url || '';
