@@ -113,6 +113,11 @@ export async function getAllStaff() {
   return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
+export async function addStaff(data) {
+  const docRef = await addDoc(staffRef, data);
+  return { id: docRef.id, _id: docRef.id, ...data };
+}
+
 export async function updateStaff(id, data) {
   await updateDoc(doc(db, 'staff', id), data);
 }

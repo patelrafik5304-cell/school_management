@@ -1134,6 +1134,37 @@ function ResultsManagement() {
             </div>
           </div>
         )}
+
+        {showAddModal && (
+          <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3 className="modal-title">Add New Staff</h3>
+                <button className="modal-close" onClick={() => setShowAddModal(false)}>×</button>
+              </div>
+              <form onSubmit={handleAddStaff}>
+                <div className="form-group">
+                  <label className="form-label">Name</label>
+                  <input type="text" className="form-input" value={newStaff.name} onChange={e => setNewStaff({ ...newStaff, name: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Role</label>
+                  <select className="form-input" value={newStaff.role} onChange={e => setNewStaff({ ...newStaff, role: e.target.value })}>
+                    <option value="Teacher">Teacher</option>
+                    <option value="Principal">Principal</option>
+                    <option value="Vice Principal">Vice Principal</option>
+                    <option value="Staff">Staff</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Experience</label>
+                  <input type="text" className="form-input" value={newStaff.experience} onChange={e => setNewStaff({ ...newStaff, experience: e.target.value })} placeholder="e.g., 5 years" />
+                </div>
+                <button type="submit" className="btn btn-primary">Add Staff</button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1416,6 +1447,8 @@ function StaffManagement() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
   const [selectedMember, setSelectedMember] = useState(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newStaff, setNewStaff] = useState({ name: '', role: 'Teacher', experience: '' })
 
   useEffect(() => {
     fetchStaff()
@@ -1456,15 +1489,29 @@ function StaffManagement() {
     }
   }
 
+  const handleAddStaff = async (e) => {
+    e.preventDefault()
+    if (!newStaff.name) return
+    try {
+      await (await getDbApi()).addStaff(newStaff)
+      setNewStaff({ name: '', role: 'Teacher', experience: '' })
+      setShowAddModal(false)
+      await fetchStaff()
+    } catch (e) {
+      console.error('Failed to add staff:', e)
+    }
+  }
+
   return (
     <div className="app">
       <AppNavbar variant="admin" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Staff Management</h1>
+          <button className="btn btn-primary btn-touch" onClick={() => setShowAddModal(true)}>+ Add Staff</button>
         </div>
         {loading ? <p>Loading...</p> : staff.length === 0 ? (
-          <p>No staff found</p>
+          <p>No staff found. Click "+ Add Staff" to add one.</p>
         ) : (
           <div className="grid grid-4">
             {staff.map(member => (
