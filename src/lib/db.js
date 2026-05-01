@@ -104,6 +104,10 @@ export async function updateResult(id, data) {
   await updateDoc(doc(db, 'results', id), data);
 }
 
+export async function deleteResult(id) {
+  await deleteDoc(doc(db, 'results', id));
+}
+
 export async function getAllStaff() {
   const snapshot = await getDocs(staffRef);
   return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));

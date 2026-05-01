@@ -233,6 +233,28 @@ body {
   background: #dc2626;
 }
 
+.btn-success {
+  background: #10b981;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-success:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-success:active {
+  transform: scale(0.95);
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
 .btn-warning {
   background: #f97316;
   color: white;

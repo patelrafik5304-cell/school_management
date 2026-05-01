@@ -705,6 +705,7 @@ function ResultsManagement() {
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [editingResult, setEditingResult] = useState(null)
   const [newResult, setNewResult] = useState({ studentId: '', examType: 'Unit Test', subject: '', marks: '', maxMarks: '100', status: 'draft' })
   const [csvMessage, setCsvMessage] = useState('')
   const [selectedClass, setSelectedClass] = useState('')
@@ -889,6 +890,54 @@ function ResultsManagement() {
     }
   }
 
+  const deleteResult = async (resultId) => {
+    if (!isAuthorizedUploader) return
+    if (!window.confirm('Are you sure you want to delete this record?')) return
+    try {
+      await (await getDbApi()).deleteResult(resultId)
+      await fetchResults()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const startEditResult = (result) => {
+    setEditingResult(result)
+    setNewResult({
+      studentId: result.studentId || '',
+      examType: result.examType || 'Unit Test',
+      subject: result.subject || '',
+      marks: result.marks?.toString() || '',
+      maxMarks: result.maxMarks?.toString() || '100',
+      status: result.status || 'draft'
+    })
+    setShowModal(true)
+  }
+
+  const updateResult = async (e) => {
+    e.preventDefault()
+    if (!isAuthorizedUploader || !editingResult) return
+    try {
+      const marks = Number(newResult.marks)
+      const maxMarks = Number(newResult.maxMarks) || 100
+      const percentage = calculatePercentage(marks, maxMarks)
+      const gpa = calculateGpa(percentage)
+      await (await getDbApi()).updateResult(editingResult.id || editingResult._id, {
+        ...newResult,
+        marks,
+        maxMarks,
+        percentage,
+        gpa,
+      })
+      setEditingResult(null)
+      setNewResult({ studentId: '', examType: 'Unit Test', subject: '', marks: '', maxMarks: '100', status: 'draft' })
+      setShowModal(false)
+      await fetchResults()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   if (!isAuthorizedUploader) {
     return (
       <div className="app">
@@ -1024,11 +1073,33 @@ function ResultsManagement() {
                     <td><span className="badge badge-success">{getGrade(Number(result.marks))}</span></td>
                     <td><span className={`badge ${result.status === 'published' ? 'badge-success' : 'badge-warning'}`}>{result.status || 'draft'}</span></td>
                     <td>
-                      {(result.status || 'draft') !== 'published' ? (
-                        <button className="btn btn-secondary" onClick={() => publishResult(result.id || result._id)}>Publish</button>
-                      ) : (
-                        <span style={{ color: 'var(--text-light)' }}>Published</span>
-                      )}
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {(result.status || 'draft') !== 'published' ? (
+                          <button
+                            className="btn btn-success btn-sm"
+                            onClick={() => publishResult(result.id || result._id)}
+                            title="Publish"
+                          >
+                            Publish
+                          </button>
+                        ) : (
+                          <span style={{ color: 'var(--text-light)', padding: '0.25rem 0.5rem' }}>Published</span>
+                        )}
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => startEditResult(result)}
+                          title="Edit"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => deleteResult(result.id || result._id)}
+                          title="Delete"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1038,16 +1109,16 @@ function ResultsManagement() {
         </div>
 
         {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-overlay" onClick={() => { setShowModal(false); setEditingResult(null); }}>
             <div className="modal" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
-                <h3 className="modal-title">Add New Result</h3>
-                <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+                <h3 className="modal-title">{editingResult ? 'Edit Result' : 'Add New Result'}</h3>
+                <button className="modal-close" onClick={() => { setShowModal(false); setEditingResult(null); }}>×</button>
               </div>
-              <form onSubmit={handleAddResult}>
+              <form onSubmit={editingResult ? updateResult : handleAddResult}>
                 <div className="form-group">
                   <label className="form-label">Student</label>
-                  <select className="form-input" value={newResult.studentId} onChange={e => setNewResult({ ...newResult, studentId: e.target.value })} required>
+                  <select className="form-input" value={newResult.studentId} onChange={e => setNewResult({ ...newResult, studentId: e.target.value })} required disabled={!!editingResult}>
                     <option value="">Select student</option>
                     {students.map(student => (
                       <option key={student.id} value={student.id}>
@@ -1081,7 +1152,10 @@ function ResultsManagement() {
                     <option value="published">Published</option>
                   </select>
                 </div>
-                <button type="submit" className="btn btn-primary">Add Result</button>
+                <button type="submit" className="btn btn-primary">{editingResult ? 'Update Result' : 'Add Result'}</button>
+                {editingResult && (
+                  <button type="button" className="btn btn-secondary" style={{ marginLeft: '0.5rem' }} onClick={() => { setShowModal(false); setEditingResult(null); }}>Cancel</button>
+                )}
               </form>
             </div>
           </div>
