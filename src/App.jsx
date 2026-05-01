@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import './index.css'
+import PieChart3D from './components/PieChart3D'
 
 // Anime.js loaded globally from CDN
 const anime = window.anime
@@ -1917,7 +1918,7 @@ function StudentDashboard() {
   const studentId = localStorage.getItem('studentId')
   const [studentName, setStudentName] = useState(localStorage.getItem('studentName') || 'Student')
   console.log('StudentDashboard - studentId:', studentId, 'studentName:', studentName)
-  const [stats, setStats] = useState({ percentage: 0, present: 0, absent: 0 })
+  const [stats, setStats] = useState({ percentage: 0, present: 0, absent: 0, holiday: 0 })
   const [notices, setNotices] = useState(0)
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1937,9 +1938,10 @@ function StudentDashboard() {
       const attendance = await (await getDbApi()).getAttendanceByStudent(studentId)
       const present = attendance.filter(a => a.status === 'Present').length
       const absent = attendance.filter(a => a.status === 'Absent').length
-      const total = present + absent
+      const holiday = attendance.filter(a => a.status === 'Holiday' || a.status === 'National Holiday').length
+      const total = present + absent + holiday
       const percentage = total > 0 ? Math.round((present / total) * 100) : 0
-      setStats({ percentage, present, absent })
+      setStats({ percentage, present, absent, holiday })
 
       const studentResults = await (await getDbApi()).getPublishedResultsByStudent(studentId)
       setResults(studentResults.slice(0, 3))
@@ -1980,6 +1982,18 @@ function StudentDashboard() {
           </div>
         </div>
         )}
+        {!loading && (stats.present > 0 || stats.absent > 0 || stats.holiday > 0) && (
+          <div className="card glass-card" style={{ marginTop: '2rem', padding: '2rem' }}>
+            <h3 className="card-header" style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              Attendance Overview
+            </h3>
+            <PieChart3D
+              present={stats.present}
+              absent={stats.absent}
+              holiday={stats.holiday}
+            />
+          </div>
+        )}
         <div className="grid grid-2" style={{ marginTop: '2rem' }}>
           <div className="card">
             <h3 className="card-header">My Recent Results</h3>
@@ -2006,7 +2020,7 @@ function StudentDashboard() {
 
 function MyAttendance() {
   const studentId = localStorage.getItem('studentId')
-  const [attendanceData, setAttendanceData] = useState({ present: 0, absent: 0, total: 0 })
+  const [attendanceData, setAttendanceData] = useState({ present: 0, absent: 0, holiday: 0, total: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -2019,9 +2033,10 @@ const fetchAttendance = async () => {
       const allAttendance = await (await getDbApi()).getAttendanceByStudent(studentId)
       const present = allAttendance.filter(a => a.status === 'Present').length
       const absent = allAttendance.filter(a => a.status === 'Absent').length
-      const total = present + absent
+      const holiday = allAttendance.filter(a => a.status === 'Holiday' || a.status === 'National Holiday').length
+      const total = present + absent + holiday
       const percentage = total > 0 ? Math.round((present / total) * 100) : 0
-      setAttendanceData({ present, absent, total, percentage })
+      setAttendanceData({ present, absent, holiday, total, percentage })
     } catch (e) {
       console.error(e)
     } finally {
@@ -2051,7 +2066,22 @@ const fetchAttendance = async () => {
               <div className="stat-value">{attendanceData.absent}</div>
               <div className="stat-label">Days Absent</div>
             </div>
+            {attendanceData.holiday > 0 && (
+              <div className="stat-card">
+                <div className="stat-value">{attendanceData.holiday}</div>
+                <div className="stat-label">Holidays</div>
+              </div>
+            )}
           </div>
+          {(attendanceData.present > 0 || attendanceData.absent > 0 || attendanceData.holiday > 0) && (
+            <div style={{ padding: '1rem 0' }}>
+              <PieChart3D
+                present={attendanceData.present}
+                absent={attendanceData.absent}
+                holiday={attendanceData.holiday}
+              />
+            </div>
+          )}
         </div>
         )}
       </div>

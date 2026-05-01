@@ -266,6 +266,22 @@ body {
   pointer-events: none;
 }
 
+.glass-card {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 8px 32px rgba(37, 99, 235, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+@media (max-width: 480px) {
+  .glass-card svg {
+    max-width: 320px;
+  }
+  .glass-card {
+    padding: 1rem !important;
+  }
+}
+
 .card-header {
   font-size: 1.25rem;
   font-weight: 600;
