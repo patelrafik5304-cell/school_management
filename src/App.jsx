@@ -42,6 +42,55 @@ function App() {
   )
 }
 
+function AppNavbar({ variant = 'admin' }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const isAdmin = variant === 'admin'
+  const links = isAdmin
+    ? [
+        { to: '/admin', label: 'Dashboard' },
+        { to: '/admin/students', label: 'Students' },
+        { to: '/admin/attendance', label: 'Attendance' },
+        { to: '/admin/results', label: 'Results' },
+        { to: '/admin/staff', label: 'Staff' },
+        { to: '/admin/announcements', label: 'Notices' },
+        { to: '/admin/gallery', label: 'Gallery' },
+      ]
+    : [
+        { to: '/student', label: 'Dashboard' },
+        { to: '/student/attendance', label: 'Attendance' },
+        { to: '/student/results', label: 'Results' },
+        { to: '/student/announcements', label: 'Notices' },
+        { to: '/student/gallery', label: 'Gallery' },
+      ]
+
+  const closeMenu = () => setIsMenuOpen(false)
+
+  return (
+    <nav className="navbar">
+      <Link to="/" className="navbar-brand" onClick={closeMenu}>PRATHMIK KUMARSHALA DEVLA</Link>
+      <button
+        className={`menu-button${isMenuOpen ? ' active' : ''}`}
+        type="button"
+        aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={isMenuOpen}
+        onClick={() => setIsMenuOpen(open => !open)}
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div className={`navbar-nav${isMenuOpen ? ' open' : ''}`}>
+        {links.map(link => (
+          <Link key={link.to} to={link.to} className="nav-link" onClick={closeMenu}>
+            {link.label}
+          </Link>
+        ))}
+        <Link to="/" className="btn btn-secondary" onClick={() => { localStorage.clear(); closeMenu() }}>Logout</Link>
+      </div>
+    </nav>
+  )
+}
+
 function EntryPage() {
   const navigate = useNavigate();
   
@@ -268,31 +317,12 @@ function AdminDashboard() {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/admin" className="nav-link">Dashboard</Link>
-          <Link to="/admin/students" className="nav-link">Students</Link>
-          <Link to="/admin/attendance" className="nav-link">Attendance</Link>
-          <Link to="/admin/results" className="nav-link">Results</Link>
-          <Link to="/admin/staff" className="nav-link">Staff</Link>
-          <Link to="/admin/announcements" className="nav-link">Notices</Link>
-          <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="admin" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Admin Dashboard</h1>
         </div>
-        <p style={{padding: '1rem', background: '#f0f9ff', borderRadius: '8px', marginBottom: '1rem'}}>
-          Debug: AdminDashboard loaded. Students: {stats.students}, Staff: {stats.staff}
-        </p>
         <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-value">{stats.students}</div>
-            <div className="stat-label">Total Students</div>
-          </div>
           <div className="stat-card">
             <div className="stat-value">{stats.staff}</div>
             <div className="stat-label">Total Staff</div>
@@ -389,19 +419,7 @@ function StudentManagement() {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/admin" className="nav-link">Dashboard</Link>
-          <Link to="/admin/students" className="nav-link">Students</Link>
-          <Link to="/admin/attendance" className="nav-link">Attendance</Link>
-          <Link to="/admin/results" className="nav-link">Results</Link>
-          <Link to="/admin/staff" className="nav-link">Staff</Link>
-          <Link to="/admin/announcements" className="nav-link">Notices</Link>
-          <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="admin" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Student Management</h1>
@@ -538,19 +556,7 @@ function AttendanceManagement() {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/admin" className="nav-link">Dashboard</Link>
-          <Link to="/admin/students" className="nav-link">Students</Link>
-          <Link to="/admin/attendance" className="nav-link">Attendance</Link>
-          <Link to="/admin/results" className="nav-link">Results</Link>
-          <Link to="/admin/staff" className="nav-link">Staff</Link>
-          <Link to="/admin/announcements" className="nav-link">Notices</Link>
-          <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="admin" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Attendance Management</h1>
@@ -643,19 +649,7 @@ function ResultsManagement() {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/admin" className="nav-link">Dashboard</Link>
-          <Link to="/admin/students" className="nav-link">Students</Link>
-          <Link to="/admin/attendance" className="nav-link">Attendance</Link>
-          <Link to="/admin/results" className="nav-link">Results</Link>
-          <Link to="/admin/staff" className="nav-link">Staff</Link>
-          <Link to="/admin/announcements" className="nav-link">Notices</Link>
-          <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="admin" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Results Management</h1>
@@ -765,19 +759,7 @@ function StaffManagement() {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/admin" className="nav-link">Dashboard</Link>
-          <Link to="/admin/students" className="nav-link">Students</Link>
-          <Link to="/admin/attendance" className="nav-link">Attendance</Link>
-          <Link to="/admin/results" className="nav-link">Results</Link>
-          <Link to="/admin/staff" className="nav-link">Staff</Link>
-          <Link to="/admin/announcements" className="nav-link">Notices</Link>
-          <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="admin" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Staff Management</h1>
@@ -854,19 +836,7 @@ function Announcements() {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/admin" className="nav-link">Dashboard</Link>
-          <Link to="/admin/students" className="nav-link">Students</Link>
-          <Link to="/admin/attendance" className="nav-link">Attendance</Link>
-          <Link to="/admin/results" className="nav-link">Results</Link>
-          <Link to="/admin/staff" className="nav-link">Staff</Link>
-          <Link to="/admin/announcements" className="nav-link">Notices</Link>
-          <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="admin" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Announcements</h1>
@@ -1074,19 +1044,7 @@ function GalleryManagement() {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/admin" className="nav-link">Dashboard</Link>
-          <Link to="/admin/students" className="nav-link">Students</Link>
-          <Link to="/admin/attendance" className="nav-link">Attendance</Link>
-          <Link to="/admin/results" className="nav-link">Results</Link>
-          <Link to="/admin/staff" className="nav-link">Staff</Link>
-          <Link to="/admin/announcements" className="nav-link">Notices</Link>
-          <Link to="/admin/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="admin" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Gallery</h1>
@@ -1399,17 +1357,7 @@ function StudentDashboard() {
   
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/student" className="nav-link">Dashboard</Link>
-          <Link to="/student/attendance" className="nav-link">Attendance</Link>
-          <Link to="/student/results" className="nav-link">Results</Link>
-          <Link to="/student/announcements" className="nav-link">Notices</Link>
-          <Link to="/student/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => { localStorage.clear() }}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="student" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Welcome, {studentName}!</h1>
@@ -1485,17 +1433,7 @@ const fetchAttendance = async () => {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/student" className="nav-link">Dashboard</Link>
-          <Link to="/student/attendance" className="nav-link">Attendance</Link>
-          <Link to="/student/results" className="nav-link">Results</Link>
-          <Link to="/student/announcements" className="nav-link">Notices</Link>
-          <Link to="/student/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="student" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">My Attendance</h1>
@@ -1546,17 +1484,7 @@ function MyResults() {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/student" className="nav-link">Dashboard</Link>
-          <Link to="/student/attendance" className="nav-link">Attendance</Link>
-          <Link to="/student/results" className="nav-link">Results</Link>
-          <Link to="/student/announcements" className="nav-link">Notices</Link>
-          <Link to="/student/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="student" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">My Results</h1>
@@ -1611,17 +1539,7 @@ function StudentAnnouncements() {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/student" className="nav-link">Dashboard</Link>
-          <Link to="/student/attendance" className="nav-link">Attendance</Link>
-          <Link to="/student/results" className="nav-link">Results</Link>
-          <Link to="/student/announcements" className="nav-link">Notices</Link>
-          <Link to="/student/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="student" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Announcements</h1>
@@ -1666,17 +1584,7 @@ function StudentGallery() {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA DEVLA</Link>
-        <div className="navbar-nav">
-          <Link to="/student" className="nav-link">Dashboard</Link>
-          <Link to="/student/attendance" className="nav-link">Attendance</Link>
-          <Link to="/student/results" className="nav-link">Results</Link>
-          <Link to="/student/announcements" className="nav-link">Notices</Link>
-          <Link to="/student/gallery" className="nav-link">Gallery</Link>
-          <Link to="/" className="btn btn-secondary" onClick={() => localStorage.clear()}>Logout</Link>
-        </div>
-      </nav>
+      <AppNavbar variant="student" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Photo Gallery</h1>
