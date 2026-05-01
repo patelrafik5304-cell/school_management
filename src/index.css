@@ -30,9 +30,9 @@
 body {
   font-family: var(--font);
   background:
-    radial-gradient(circle at 12% 10%, rgba(56, 189, 248, 0.22), transparent 30%),
-    radial-gradient(circle at 86% 12%, rgba(245, 158, 11, 0.18), transparent 26%),
-    linear-gradient(135deg, #f8fbff 0%, #eef6ff 44%, #f5fbf7 100%);
+    radial-gradient(circle at 12% 10%, rgba(125, 211, 252, 0.24), transparent 30%),
+    radial-gradient(circle at 86% 12%, rgba(252, 211, 77, 0.16), transparent 26%),
+    linear-gradient(135deg, #fbfdff 0%, #f2f8ff 48%, #f6fff9 100%);
   color: var(--text);
   min-height: 100vh;
   line-height: 1.5;
@@ -409,10 +409,10 @@ body {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.24), transparent 18%),
-    radial-gradient(circle at 78% 18%, rgba(245, 158, 11, 0.26), transparent 20%),
-    radial-gradient(circle at 72% 76%, rgba(16, 185, 129, 0.25), transparent 22%),
-    linear-gradient(135deg, #082f69 0%, #2563eb 46%, #0891b2 100%);
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.72), transparent 20%),
+    radial-gradient(circle at 78% 18%, rgba(253, 224, 71, 0.24), transparent 22%),
+    radial-gradient(circle at 72% 76%, rgba(134, 239, 172, 0.26), transparent 24%),
+    linear-gradient(135deg, #dbeafe 0%, #bfdbfe 45%, #ccfbf1 100%);
   padding: 1rem;
   position: relative;
   overflow: hidden;
@@ -486,10 +486,10 @@ body {
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 18px;
-  box-shadow: 0 30px 80px rgba(7, 22, 55, 0.32);
+  box-shadow: 0 30px 80px rgba(37, 99, 235, 0.18);
   padding: 2.5rem;
   width: 100%;
   max-width: 420px;
@@ -1641,13 +1641,16 @@ html {
 
 /* Clean admin layout matching the school management table view */
 .app {
-  background: #f4f7fb;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(191, 219, 254, 0.45), transparent 28%),
+    radial-gradient(circle at 92% 18%, rgba(204, 251, 241, 0.55), transparent 26%),
+    linear-gradient(135deg, #f9fbff 0%, #f2f7ff 52%, #f8fffb 100%);
   overflow-x: hidden;
 }
 
 .app::before,
 .app::after {
-  opacity: 0.28;
+  opacity: 0.12;
 }
 
 .navbar {
@@ -1657,7 +1660,7 @@ html {
 }
 
 .navbar-brand {
-  color: #2558e8;
+  color: #1d4ed8;
   background: none;
   -webkit-background-clip: initial;
   background-clip: initial;
@@ -1742,8 +1745,8 @@ html {
   min-width: 184px !important;
   min-height: 56px !important;
   border-radius: 12px;
-  background: #2558e8;
-  box-shadow: 0 12px 22px rgba(37, 88, 232, 0.28);
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  box-shadow: 0 12px 22px rgba(37, 99, 235, 0.2);
   font-size: 1.1rem !important;
 }
 
