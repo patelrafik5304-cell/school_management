@@ -113,6 +113,10 @@ export async function getAllStaff() {
   return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
+export async function updateStaff(id, data) {
+  await updateDoc(doc(db, 'staff', id), data);
+}
+
 export async function getAllAnnouncements() {
   const now = new Date();
   const q = query(announcementsRef, orderBy('date', 'desc'));

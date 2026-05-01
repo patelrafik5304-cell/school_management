@@ -1413,6 +1413,9 @@ function escapeHtml(value) {
 function StaffManagement() {
   const [staff, setStaff] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState('')
+  const [selectedMember, setSelectedMember] = useState(null)
 
   useEffect(() => {
     fetchStaff()
@@ -1429,6 +1432,30 @@ function StaffManagement() {
     }
   }
 
+  const handleFileSelect = (e, member) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setSelectedMember(member)
+    setSelectedFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setPreviewUrl(ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
+  const uploadPhoto = async () => {
+    if (!selectedFile || !selectedMember) return
+    try {
+      const dataUrl = await (await getStorageApi()).uploadImage(selectedFile)
+      await (await getDbApi()).updateStaff(selectedMember._id || selectedMember.id, { photoUrl: dataUrl })
+      setSelectedFile(null)
+      setPreviewUrl('')
+      setSelectedMember(null)
+      await fetchStaff()
+    } catch (e) {
+      console.error('Failed to upload photo:', e)
+    }
+  }
+
   return (
     <div className="app">
       <AppNavbar variant="admin" />
@@ -1442,16 +1469,56 @@ function StaffManagement() {
           <div className="grid grid-4">
             {staff.map(member => (
               <div key={member._id} className="card staff-card">
-                <div className="staff-avatar">
-                  {member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                <div className="staff-avatar" style={{ position: 'relative', overflow: 'hidden' }}>
+                  {member.photoUrl ? (
+                    <img src={member.photoUrl} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  ) : (
+                    member.name.split(' ').map(n => n[0]).join('').slice(0, 2)
+                  )}
+                  <label style={{
+                    position: 'absolute',
+                    bottom: '0',
+                    right: '0',
+                    background: 'var(--primary)',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '24px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}>
+                    +
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleFileSelect(e, member)} />
+                  </label>
                 </div>
                 <div className="staff-name">{member.name}</div>
                 <div className="staff-role">{member.role}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.5rem' }}>
-                  {member.experience}
-                </div>
+                {member.photoUrl && (
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-light)', marginTop: '0.25rem' }}>Photo uploaded</div>
+                )}
               </div>
             ))}
+          </div>
+        )}
+
+        {previewUrl && (
+          <div className="modal-overlay" onClick={() => { setPreviewUrl(''); setSelectedFile(null); setSelectedMember(null); }}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3 className="modal-title">Upload Photo</h3>
+                <button className="modal-close" onClick={() => { setPreviewUrl(''); setSelectedFile(null); setSelectedMember(null); }}>×</button>
+              </div>
+              <div style={{ textAlign: 'center', padding: '1rem' }}>
+                <img src={previewUrl} alt="Preview" style={{ width: '150px', height: '150px', objectFit: 'cover', borderRadius: '50%', marginBottom: '1rem' }} />
+                <div>
+                  <button className="btn btn-primary" onClick={uploadPhoto}>Upload Photo</button>
+                  <button className="btn btn-secondary" style={{ marginLeft: '0.5rem' }} onClick={() => { setPreviewUrl(''); setSelectedFile(null); setSelectedMember(null); }}>Cancel</button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
