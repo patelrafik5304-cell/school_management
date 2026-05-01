@@ -421,7 +421,7 @@ function StudentManagement() {
               </thead>
               <tbody className="data-loaded">
                 {students.map((student, index) => (
-                  <tr key={student.id} style={{ opacity: 0, animation: `fadeIn 0.4s ease-out ${index * 50}ms forwards` }}>
+                  <tr key={student.id} style={{ opacity: 0, animation: `fadeInUp 0.4s ease-out ${index * 50}ms forwards` }}>
                     <td>{student.rollNumber}</td>
                     <td>{student.name}</td>
                     <td>{student.class}</td>
