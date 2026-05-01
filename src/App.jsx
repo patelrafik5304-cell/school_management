@@ -1339,7 +1339,7 @@ function GalleryManagement() {
 
 function StudentDashboard() {
   const studentId = localStorage.getItem('studentId')
-  const studentName = localStorage.getItem('studentName') || 'Student'
+  const [studentName, setStudentName] = useState(localStorage.getItem('studentName') || 'Student')
   console.log('StudentDashboard - studentId:', studentId, 'studentName:', studentName)
   const [stats, setStats] = useState({ percentage: 0, present: 0, absent: 0 })
   const [notices, setNotices] = useState(0)
@@ -1353,6 +1353,11 @@ function StudentDashboard() {
   const fetchData = async () => {
     if (!studentId) return
     try {
+      // Fetch student details to ensure we have the name
+      const student = await db.getStudentById(studentId)
+      console.log('Fetched student:', student)
+      setStudentName(student.name || 'Student')
+      
       const attendance = await db.getAttendanceByStudent(studentId)
       const present = attendance.filter(a => a.status === 'Present').length
       const absent = attendance.filter(a => a.status === 'Absent').length

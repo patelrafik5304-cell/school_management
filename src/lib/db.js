@@ -41,6 +41,12 @@ export async function deleteStudent(id) {
   await deleteDoc(doc(db, 'students', id));
 }
 
+export async function getStudentById(id) {
+  const docSnap = await getDoc(doc(db, 'students', id));
+  if (!docSnap.exists()) throw new Error('Student not found');
+  return { id: docSnap.id, ...docSnap.data() };
+}
+
 export async function loginStudent(username, password) {
   const q = query(studentsRef, where('username', '==', username), where('password', '==', password));
   const snapshot = await getDocs(q);
