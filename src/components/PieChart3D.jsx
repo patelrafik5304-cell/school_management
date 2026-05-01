@@ -171,12 +171,12 @@ function PieChart3D({ present = 0, absent = 0, holiday = 0 }) {
           })}
 
           {/* Inner circle for donut effect */}
-          <circle cx="200" cy="200" r={radius * 0.55} fill="rgba(255,255,255,0.9)" style={{ backdropFilter: 'blur(10px)' }} />
-          <text x="200" y="195" textAnchor="middle" fill="#1e293b" fontSize="24" fontWeight="800">
-            {total}
+          <circle cx="200" cy="200" r={radius * 0.55} fill="rgba(255,255,255,0.95)" style={{ backdropFilter: 'blur(10px)' }} />
+          <text x="200" y="185" textAnchor="middle" fill="#1e293b" fontSize="32" fontWeight="800" style={{ opacity: animated ? 1 : 0, transition: 'opacity 0.8s 0.6s' }}>
+            {total > 0 ? `${Math.round((present / total) * 100)}%` : '0%'}
           </text>
-          <text x="200" y="215" textAnchor="middle" fill="#64748b" fontSize="12">
-            Total Days
+          <text x="200" y="210" textAnchor="middle" fill="#64748b" fontSize="13" fontWeight="500" style={{ opacity: animated ? 1 : 0, transition: 'opacity 0.8s 0.8s' }}>
+            Attendance
           </text>
         </g>
 
