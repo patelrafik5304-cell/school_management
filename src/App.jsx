@@ -46,12 +46,7 @@ function App() {
 function AppNavbar({ variant = 'admin' }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const isAdmin = variant === 'admin'
-  const isTeacher = variant === 'teacher'
-  const links = isTeacher
-    ? [
-        { to: '/admin/results', label: 'Results' },
-      ]
-    : isAdmin
+  const links = isAdmin
     ? [
         { to: '/admin', label: 'Dashboard' },
         { to: '/admin/students', label: 'Students' },
@@ -152,12 +147,10 @@ function EntryPage() {
 
 const ADMIN_USERNAME = 'admin'
 const ADMIN_PASSWORD = 'admin123'
-const TEACHER_USERNAME = 'teacher'
-const TEACHER_PASSWORD = 'teacher123'
 
 function LoginPage() {
   const [searchParams] = useSearchParams()
-  const initialRole = ['admin', 'teacher'].includes(searchParams.get('role')) ? searchParams.get('role') : 'student'
+  const initialRole = ['admin'].includes(searchParams.get('role')) ? searchParams.get('role') : 'student'
   const [role, setRole] = useState(initialRole)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -168,7 +161,7 @@ function LoginPage() {
 
   useEffect(() => {
     const roleParam = searchParams.get('role')
-    if (roleParam === 'admin' || roleParam === 'teacher' || roleParam === 'student') {
+    if (roleParam === 'admin' || roleParam === 'student') {
       setRole(roleParam)
     }
     console.log('LoginPage loaded, role:', roleParam)
@@ -181,20 +174,13 @@ function LoginPage() {
       return
     }
     setError('')
-    
+
     if (role === 'admin') {
       if (username.toLowerCase() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         localStorage.setItem('userRole', 'admin')
         navigate('/admin')
       } else {
         setError('Invalid admin credentials')
-      }
-    } else if (role === 'teacher') {
-      if (username.toLowerCase() === TEACHER_USERNAME && password === TEACHER_PASSWORD) {
-        localStorage.setItem('userRole', 'teacher')
-        navigate('/admin/results')
-      } else {
-        setError('Invalid teacher credentials')
       }
     } else {
       setLoading(true)
@@ -229,13 +215,13 @@ function LoginPage() {
         </div>
         
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
-          <button 
+          <button
             onClick={() => setRole('admin')}
-            style={{ 
-              flex: 1, 
-              padding: '0.75rem', 
-              border: 'none', 
-              background: role === 'admin' ? '#2563eb' : 'transparent', 
+            style={{
+              flex: 1,
+              padding: '0.75rem',
+              border: 'none',
+              background: role === 'admin' ? '#2563eb' : 'transparent',
               color: role === 'admin' ? 'white' : '#64748b',
               borderRadius: '8px',
               fontWeight: 600,
@@ -244,28 +230,13 @@ function LoginPage() {
           >
             Admin
           </button>
-          <button 
-            onClick={() => setRole('teacher')}
-            style={{ 
-              flex: 1, 
-              padding: '0.75rem', 
-              border: 'none', 
-              background: role === 'teacher' ? '#2563eb' : 'transparent', 
-              color: role === 'teacher' ? 'white' : '#64748b',
-              borderRadius: '8px',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            Teacher
-          </button>
-          <button 
+          <button
             onClick={() => setRole('student')}
-            style={{ 
-              flex: 1, 
-              padding: '0.75rem', 
-              border: 'none', 
-              background: role === 'student' ? '#2563eb' : 'transparent', 
+            style={{
+              flex: 1,
+              padding: '0.75rem',
+              border: 'none',
+              background: role === 'student' ? '#2563eb' : 'transparent',
               color: role === 'student' ? 'white' : '#64748b',
               borderRadius: '8px',
               fontWeight: 600,
@@ -747,7 +718,7 @@ function ResultsManagement() {
     fetchStudents()
   }, [])
 
-  const isAuthorizedUploader = ['admin', 'teacher'].includes(localStorage.getItem('userRole'))
+  const isAuthorizedUploader = ['admin'].includes(localStorage.getItem('userRole'))
   const classOptions = Array.from(new Set(students.map(student => student.class).filter(Boolean))).sort()
   const validPreviewRows = bulkPreview.filter(row => row.errors.length === 0)
   const invalidPreviewRows = bulkPreview.length - validPreviewRows.length
@@ -866,7 +837,7 @@ function ResultsManagement() {
 
   const submitBulkResults = async () => {
     if (!isAuthorizedUploader) {
-      setCsvMessage('Only authorized admins or teachers can publish results.')
+      setCsvMessage('Only authorized admins can publish results.')
       return
     }
     if (validPreviewRows.length === 0) {
@@ -934,7 +905,7 @@ function ResultsManagement() {
 
   return (
     <div className="app">
-      <AppNavbar variant={localStorage.getItem('userRole') === 'teacher' ? 'teacher' : 'admin'} />
+      <AppNavbar variant="admin" />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Results Management</h1>
