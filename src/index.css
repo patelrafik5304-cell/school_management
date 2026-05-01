@@ -233,6 +233,23 @@ body {
   background: #dc2626;
 }
 
+.btn-warning {
+  background: #f97316;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-warning:hover {
+  background: #ea580c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+}
+
+.btn-warning:active {
+  transform: scale(0.95);
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;

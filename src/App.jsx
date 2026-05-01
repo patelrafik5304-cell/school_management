@@ -651,20 +651,27 @@ function AttendanceManagement() {
                     <td>{student.name}</td>
                     <td>{student.class}</td>
                     <td>
-                      <button
-                        className={`btn ${attendance[student._id] === 'Present' ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ marginRight: '0.5rem' }}
-                        onClick={() => markAttendance(student._id, 'Present')}
-                      >
-                        Present
-                      </button>
-                      <button
-                        className={`btn ${attendance[student._id] === 'Absent' ? 'btn-danger' : 'btn-secondary'}`}
-                        onClick={() => markAttendance(student._id, 'Absent')}
-                      >
-                        Absent
-                      </button>
-                    </td>
+                       <button
+                         className={`btn ${attendance[student._id] === 'Present' ? 'btn-primary' : 'btn-secondary'}`}
+                         style={{ marginRight: '0.5rem' }}
+                         onClick={() => markAttendance(student._id, 'Present')}
+                       >
+                         Present
+                       </button>
+                       <button
+                         className={`btn ${attendance[student._id] === 'Absent' ? 'btn-danger' : 'btn-secondary'}`}
+                         style={{ marginRight: '0.5rem' }}
+                         onClick={() => markAttendance(student._id, 'Absent')}
+                       >
+                         Absent
+                       </button>
+                       <button
+                         className={`btn ${attendance[student._id] === 'No Attendance' ? 'btn-warning' : 'btn-secondary'}`}
+                         onClick={() => markAttendance(student._id, 'No Attendance')}
+                       >
+                         No Attendance
+                       </button>
+                     </td>
                   </tr>
                 ))}
               </tbody>
