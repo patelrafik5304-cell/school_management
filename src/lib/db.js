@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, getDoc, addDoc, deleteDoc, doc, query, orderBy, where, limit as firestoreLimit } from "firebase/firestore";
+import { getFirestore, collection, getDocs, getDoc, addDoc, deleteDoc, doc, query, orderBy, where, updateDoc, limit as firestoreLimit } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAqlHLlwyO4Q0CeowDoV_8dtzI_Mni7pIE",
@@ -78,9 +78,30 @@ export async function getAllResults() {
   return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
+export async function getResultsByStudent(studentId) {
+  const q = query(resultsRef, where('studentId', '==', studentId));
+  const snapshot = await getDocs(q);
+  return snapshot.docs
+    .map(d => ({ id: d.id, _id: d.id, ...d.data() }))
+    .sort((a, b) => {
+      const aTime = a.createdAt?.toMillis?.() || 0;
+      const bTime = b.createdAt?.toMillis?.() || 0;
+      return bTime - aTime;
+    });
+}
+
+export async function getPublishedResultsByStudent(studentId) {
+  const results = await getResultsByStudent(studentId);
+  return results.filter(result => result.status === 'published');
+}
+
 export async function addResult(data) {
   const docRef = await addDoc(resultsRef, { ...data, createdAt: new Date() });
   return { id: docRef.id, _id: docRef.id, ...data };
+}
+
+export async function updateResult(id, data) {
+  await updateDoc(doc(db, 'results', id), data);
 }
 
 export async function getAllStaff() {

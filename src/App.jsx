@@ -45,7 +45,12 @@ function App() {
 function AppNavbar({ variant = 'admin' }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const isAdmin = variant === 'admin'
-  const links = isAdmin
+  const isTeacher = variant === 'teacher'
+  const links = isTeacher
+    ? [
+        { to: '/admin/results', label: 'Results' },
+      ]
+    : isAdmin
     ? [
         { to: '/admin', label: 'Dashboard' },
         { to: '/admin/students', label: 'Students' },
@@ -64,6 +69,17 @@ function AppNavbar({ variant = 'admin' }) {
       ]
 
   const closeMenu = () => setIsMenuOpen(false)
+  const handleLogout = (event) => {
+    const shouldLogout = window.confirm('Are you sure you want to logout?')
+
+    if (!shouldLogout) {
+      event.preventDefault()
+      return
+    }
+
+    localStorage.clear()
+    closeMenu()
+  }
 
   return (
     <nav className="navbar">
@@ -85,7 +101,7 @@ function AppNavbar({ variant = 'admin' }) {
             {link.label}
           </Link>
         ))}
-        <Link to="/" className="btn btn-secondary" onClick={() => { localStorage.clear(); closeMenu() }}>Logout</Link>
+        <Link to="/" className="btn btn-secondary" onClick={handleLogout}>Logout</Link>
       </div>
     </nav>
   )
@@ -135,10 +151,12 @@ function EntryPage() {
 
 const ADMIN_USERNAME = 'admin'
 const ADMIN_PASSWORD = 'admin123'
+const TEACHER_USERNAME = 'teacher'
+const TEACHER_PASSWORD = 'teacher123'
 
 function LoginPage() {
   const [searchParams] = useSearchParams()
-  const initialRole = searchParams.get('role') === 'admin' ? 'admin' : 'student'
+  const initialRole = ['admin', 'teacher'].includes(searchParams.get('role')) ? searchParams.get('role') : 'student'
   const [role, setRole] = useState(initialRole)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -148,7 +166,7 @@ function LoginPage() {
 
   useEffect(() => {
     const roleParam = searchParams.get('role')
-    if (roleParam === 'admin' || roleParam === 'student') {
+    if (roleParam === 'admin' || roleParam === 'teacher' || roleParam === 'student') {
       setRole(roleParam)
     }
     console.log('LoginPage loaded, role:', roleParam)
@@ -168,6 +186,13 @@ function LoginPage() {
         navigate('/admin')
       } else {
         setError('Invalid admin credentials')
+      }
+    } else if (role === 'teacher') {
+      if (username.toLowerCase() === TEACHER_USERNAME && password === TEACHER_PASSWORD) {
+        localStorage.setItem('userRole', 'teacher')
+        navigate('/admin/results')
+      } else {
+        setError('Invalid teacher credentials')
       }
     } else {
       setLoading(true)
@@ -216,6 +241,21 @@ function LoginPage() {
             }}
           >
             Admin
+          </button>
+          <button 
+            onClick={() => setRole('teacher')}
+            style={{ 
+              flex: 1, 
+              padding: '0.75rem', 
+              border: 'none', 
+              background: role === 'teacher' ? '#2563eb' : 'transparent', 
+              color: role === 'teacher' ? 'white' : '#64748b',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Teacher
           </button>
           <button 
             onClick={() => setRole('student')}
@@ -616,13 +656,35 @@ function AttendanceManagement() {
 
 function ResultsManagement() {
   const [results, setResults] = useState([])
+  const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [newResult, setNewResult] = useState({ studentName: '', studentClass: '', subject: '', marks: '' })
+  const [newResult, setNewResult] = useState({ studentId: '', examType: 'Unit Test', subject: '', marks: '', maxMarks: '100', status: 'draft' })
+  const [csvMessage, setCsvMessage] = useState('')
+  const [selectedClass, setSelectedClass] = useState('')
+  const [selectedExamType, setSelectedExamType] = useState('Unit Test')
+  const [uploadStatus, setUploadStatus] = useState('draft')
+  const [bulkPreview, setBulkPreview] = useState([])
+  const [bulkFileName, setBulkFileName] = useState('')
 
   useEffect(() => {
     fetchResults()
+    fetchStudents()
   }, [])
+
+  const isAuthorizedUploader = ['admin', 'teacher'].includes(localStorage.getItem('userRole'))
+  const classOptions = Array.from(new Set(students.map(student => student.class).filter(Boolean))).sort()
+  const validPreviewRows = bulkPreview.filter(row => row.errors.length === 0)
+  const invalidPreviewRows = bulkPreview.length - validPreviewRows.length
+
+  const fetchStudents = async () => {
+    try {
+      const data = await (await getDbApi()).getAllStudents()
+      setStudents(data)
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   const fetchResults = async () => {
     try {
@@ -637,24 +699,253 @@ function ResultsManagement() {
 
   const handleAddResult = async (e) => {
     e.preventDefault()
+    if (!isAuthorizedUploader) return
     try {
-      await (await getDbApi()).addResult(newResult)
+      const student = students.find(item => item.id === newResult.studentId)
+      if (!student) {
+        setCsvMessage('Please select a valid student.')
+        return
+      }
+
+      await (await getDbApi()).addResult({
+        ...newResult,
+        studentName: student.name,
+        studentClass: student.class,
+        marks: Number(newResult.marks),
+        maxMarks: Number(newResult.maxMarks) || 100,
+        percentage: calculatePercentage(Number(newResult.marks), Number(newResult.maxMarks) || 100),
+        gpa: calculateGpa(calculatePercentage(Number(newResult.marks), Number(newResult.maxMarks) || 100)),
+      })
       fetchResults()
       setShowModal(false)
-      setNewResult({ studentName: '', studentClass: '', subject: '', marks: '' })
+      setNewResult({ studentId: '', examType: 'Unit Test', subject: '', marks: '', maxMarks: '100', status: 'draft' })
+      setCsvMessage('')
     } catch (e) {
       console.error(e)
     }
   }
 
+  const downloadResultTemplate = async (format = 'csv') => {
+    const headers = ['studentId', 'rollNumber', 'class', 'studentName', 'examType', 'maxMarks', ...RESULT_SUBJECTS]
+    const firstStudent = students.find(student => !selectedClass || student.class === selectedClass)
+    const sample = [
+      firstStudent?.id || '',
+      firstStudent?.rollNumber || '1',
+      selectedClass || firstStudent?.class || '5',
+      firstStudent?.name || 'Student Name',
+      selectedExamType,
+      '100',
+      '78',
+      '82',
+      '75',
+      '88',
+      '81',
+      '79',
+      '90',
+    ]
+
+    if (format === 'xlsx') {
+      const XLSX = await import('xlsx')
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, sample])
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Results')
+      XLSX.writeFile(workbook, 'student-results-template.xlsx')
+      return
+    }
+
+    const csv = [headers, sample].map(row => row.map(escapeCsvCell).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'student-results-template.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleCsvUpload = async (event) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    if (!isAuthorizedUploader) {
+      setCsvMessage('Only authorized admins or teachers can upload results.')
+      return
+    }
+
+    try {
+      const rows = await readResultFile(file)
+      if (rows.length < 2) {
+        setCsvMessage('The uploaded file is empty.')
+        return
+      }
+
+      const preview = buildResultPreview(rows, students, selectedClass, selectedExamType, uploadStatus)
+      setBulkPreview(preview)
+      setBulkFileName(file.name)
+      setCsvMessage(`Preview ready for ${file.name}. Review errors before submitting.`)
+    } catch (e) {
+      console.error(e)
+      setCsvMessage('Could not read the file. Please upload a valid Excel or CSV file.')
+    }
+  }
+
+  const submitBulkResults = async () => {
+    if (!isAuthorizedUploader) {
+      setCsvMessage('Only authorized admins or teachers can publish results.')
+      return
+    }
+    if (validPreviewRows.length === 0) {
+      setCsvMessage('No valid rows to submit.')
+      return
+    }
+
+    try {
+      const dbApi = await getDbApi()
+      let imported = 0
+
+      for (const row of validPreviewRows) {
+        for (const subjectResult of row.subjectResults) {
+          await dbApi.addResult({
+            studentId: row.student.id,
+            studentName: row.student.name,
+            studentClass: row.student.class,
+            rollNumber: row.student.rollNumber,
+            examType: row.examType,
+            subject: subjectResult.subject,
+            marks: subjectResult.marks,
+            maxMarks: subjectResult.maxMarks,
+            percentage: row.percentage,
+            gpa: row.gpa,
+            status: row.status,
+            uploadedByRole: localStorage.getItem('userRole') || 'admin',
+          })
+          imported += 1
+        }
+      }
+
+      await fetchResults()
+      setBulkPreview([])
+      setBulkFileName('')
+      setCsvMessage(`Submitted ${imported} subject results as ${uploadStatus}.`)
+    } catch (e) {
+      console.error(e)
+      setCsvMessage('Could not submit results. Please try again.')
+    }
+  }
+
+  const publishResult = async (resultId) => {
+    if (!isAuthorizedUploader) return
+    try {
+      await (await getDbApi()).updateResult(resultId, { status: 'published', publishedAt: new Date() })
+      await fetchResults()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  if (!isAuthorizedUploader) {
+    return (
+      <div className="app">
+        <AppNavbar variant="admin" />
+        <div className="container">
+          <div className="card">
+            <h1 className="page-title">Access Restricted</h1>
+            <p>Only authorized admins or teachers can upload and manage student results.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="app">
-      <AppNavbar variant="admin" />
+      <AppNavbar variant={localStorage.getItem('userRole') === 'teacher' ? 'teacher' : 'admin'} />
       <div className="container">
         <div className="page-header">
           <h1 className="page-title">Results Management</h1>
-          <button className="btn btn-primary btn-touch" onClick={() => setShowModal(true)}>+ Add Result</button>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-secondary btn-touch" onClick={() => downloadResultTemplate('csv')}>CSV Template</button>
+            <button className="btn btn-secondary btn-touch" onClick={() => downloadResultTemplate('xlsx')}>Excel Template</button>
+            <label className="btn btn-secondary btn-touch" style={{ cursor: 'pointer' }}>
+              Upload File
+              <input type="file" accept=".csv,.xlsx,.xls,text/csv" onChange={handleCsvUpload} style={{ display: 'none' }} />
+            </label>
+            <button className="btn btn-primary btn-touch" onClick={() => setShowModal(true)}>+ Add Result</button>
+          </div>
         </div>
+
+        <div className="result-upload-panel">
+          <div className="form-group">
+            <label className="form-label">Class</label>
+            <select className="form-input" value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
+              <option value="">All Classes</option>
+              {classOptions.map(className => <option key={className} value={className}>Class {className}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Exam Type</label>
+            <select className="form-input" value={selectedExamType} onChange={e => setSelectedExamType(e.target.value)}>
+              {RESULT_EXAM_TYPES.map(examType => <option key={examType} value={examType}>{examType}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Publish Control</label>
+            <select className="form-input" value={uploadStatus} onChange={e => setUploadStatus(e.target.value)}>
+              <option value="draft">Save as Draft</option>
+              <option value="published">Publish Immediately</option>
+            </select>
+          </div>
+        </div>
+
+        {csvMessage && <p style={{ marginBottom: '1rem', color: 'var(--text)' }}>{csvMessage}</p>}
+
+        {bulkPreview.length > 0 && (
+          <div className="card result-preview-card">
+            <div className="result-preview-header">
+              <div>
+                <h3 className="card-header">Upload Preview</h3>
+                <p>{bulkFileName} - {validPreviewRows.length} valid rows, {invalidPreviewRows} rows need attention</p>
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button className="btn btn-secondary" onClick={() => setBulkPreview([])}>Clear Preview</button>
+                <button className="btn btn-primary" onClick={submitBulkResults} disabled={validPreviewRows.length === 0}>Submit Valid Results</button>
+              </div>
+            </div>
+            <div className="table-scroll">
+              <table className="table result-preview-table">
+                <thead>
+                  <tr>
+                    <th>Row</th>
+                    <th>Student</th>
+                    <th>Class</th>
+                    <th>Exam</th>
+                    <th>Subjects</th>
+                    <th>Percentage</th>
+                    <th>GPA</th>
+                    <th>Status</th>
+                    <th>Validation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bulkPreview.map(row => (
+                    <tr key={row.rowNumber} className={row.errors.length ? 'row-error' : ''}>
+                      <td>{row.rowNumber}</td>
+                      <td>{row.student ? `${row.student.name} (${row.student.rollNumber})` : 'Not matched'}</td>
+                      <td>{row.className || '-'}</td>
+                      <td>{row.examType}</td>
+                      <td>{row.subjectResults.map(subject => `${subject.subject}: ${subject.marks}/${subject.maxMarks}`).join(', ') || '-'}</td>
+                      <td>{row.percentage ? `${row.percentage}%` : '-'}</td>
+                      <td>{row.gpa || '-'}</td>
+                      <td><span className={`badge ${row.status === 'published' ? 'badge-success' : 'badge-warning'}`}>{row.status}</span></td>
+                      <td>{row.errors.length ? row.errors.join('; ') : <span className="badge badge-success">Ready</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className="card">
           {loading ? <p>Loading...</p> : results.length === 0 ? (
             <p>No results found</p>
@@ -664,9 +955,14 @@ function ResultsManagement() {
                 <tr>
                   <th>Student Name</th>
                   <th>Class</th>
+                  <th>Exam</th>
                   <th>Subject</th>
                   <th>Marks</th>
+                  <th>Percentage</th>
+                  <th>GPA</th>
                   <th>Grade</th>
+                  <th>Status</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -674,9 +970,20 @@ function ResultsManagement() {
                   <tr key={result._id}>
                     <td>{result.studentName}</td>
                     <td>{result.studentClass}</td>
+                    <td>{result.examType || 'Result'}</td>
                     <td>{result.subject}</td>
-                    <td>{result.marks}/{result.maxMarks}</td>
-                    <td><span className="badge badge-success">{getGrade(result.marks)}</span></td>
+                    <td>{result.marks}/{result.maxMarks || 100}</td>
+                    <td>{result.percentage ? `${result.percentage}%` : `${calculatePercentage(result.marks, result.maxMarks || 100)}%`}</td>
+                    <td>{result.gpa || calculateGpa(calculatePercentage(result.marks, result.maxMarks || 100))}</td>
+                    <td><span className="badge badge-success">{getGrade(Number(result.marks))}</span></td>
+                    <td><span className={`badge ${result.status === 'published' ? 'badge-success' : 'badge-warning'}`}>{result.status || 'draft'}</span></td>
+                    <td>
+                      {(result.status || 'draft') !== 'published' ? (
+                        <button className="btn btn-secondary" onClick={() => publishResult(result.id || result._id)}>Publish</button>
+                      ) : (
+                        <span style={{ color: 'var(--text-light)' }}>Published</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -693,12 +1000,21 @@ function ResultsManagement() {
               </div>
               <form onSubmit={handleAddResult}>
                 <div className="form-group">
-                  <label className="form-label">Student Name</label>
-                  <input type="text" className="form-input" value={newResult.studentName} onChange={e => setNewResult({ ...newResult, studentName: e.target.value })} required />
+                  <label className="form-label">Student</label>
+                  <select className="form-input" value={newResult.studentId} onChange={e => setNewResult({ ...newResult, studentId: e.target.value })} required>
+                    <option value="">Select student</option>
+                    {students.map(student => (
+                      <option key={student.id} value={student.id}>
+                        {student.name} - Class {student.class} - Roll {student.rollNumber}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Class</label>
-                  <input type="text" className="form-input" value={newResult.studentClass} onChange={e => setNewResult({ ...newResult, studentClass: e.target.value })} required />
+                  <label className="form-label">Exam Type</label>
+                  <select className="form-input" value={newResult.examType} onChange={e => setNewResult({ ...newResult, examType: e.target.value })} required>
+                    {RESULT_EXAM_TYPES.map(examType => <option key={examType} value={examType}>{examType}</option>)}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Subject</label>
@@ -707,6 +1023,17 @@ function ResultsManagement() {
                 <div className="form-group">
                   <label className="form-label">Marks</label>
                   <input type="number" className="form-input" value={newResult.marks} onChange={e => setNewResult({ ...newResult, marks: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Max Marks</label>
+                  <input type="number" className="form-input" value={newResult.maxMarks} onChange={e => setNewResult({ ...newResult, maxMarks: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Result Status</label>
+                  <select className="form-input" value={newResult.status} onChange={e => setNewResult({ ...newResult, status: e.target.value })}>
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
                 </div>
                 <button type="submit" className="btn btn-primary">Add Result</button>
               </form>
@@ -718,6 +1045,10 @@ function ResultsManagement() {
   )
 }
 
+const RESULT_EXAM_TYPES = ['Unit Test', 'Mid Term', 'Final Exam', 'Annual Exam']
+const RESULT_SUBJECTS = ['Gujarati', 'Hindi', 'English', 'Maths', 'Science', 'Social Science', 'Computer']
+const RESULT_META_KEYS = new Set(['studentid', 'rollnumber', 'rollno', 'class', 'studentname', 'name', 'examtype', 'exam', 'maxmarks', 'subject', 'marks', 'status'])
+
 function getGrade(marks) {
   if (marks >= 90) return 'A+'
   if (marks >= 80) return 'A'
@@ -727,15 +1058,262 @@ function getGrade(marks) {
   return 'D'
 }
 
-function resultBelongsToStudent(result, studentName, studentClass) {
-  const resultName = String(result.studentName || '').trim().toLowerCase()
-  const resultClass = String(result.studentClass || '').trim().toLowerCase()
-  const name = String(studentName || '').trim().toLowerCase()
-  const className = String(studentClass || '').trim().toLowerCase()
+function calculatePercentage(marks, maxMarks) {
+  const safeMarks = Number(marks)
+  const safeMax = Number(maxMarks)
+  if (Number.isNaN(safeMarks) || Number.isNaN(safeMax) || safeMax <= 0) return 0
+  return Math.round((safeMarks / safeMax) * 10000) / 100
+}
 
-  if (!name) return false
-  if (resultName !== name) return false
-  return !className || !resultClass || resultClass === className
+function calculateGpa(percentage) {
+  const safePercentage = Number(percentage)
+  if (Number.isNaN(safePercentage)) return 0
+  return Math.min(10, Math.max(0, Math.round((safePercentage / 10) * 10) / 10))
+}
+
+function escapeCsvCell(value) {
+  const text = String(value ?? '')
+  if (/[",\n\r]/.test(text)) return `"${text.replace(/"/g, '""')}"`
+  return text
+}
+
+async function readResultFile(file) {
+  const fileName = file.name.toLowerCase()
+  if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+    const XLSX = await import('xlsx')
+    const data = await file.arrayBuffer()
+    const workbook = XLSX.read(data, { type: 'array' })
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+    return XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' })
+  }
+
+  return parseCsvRows(await file.text())
+}
+
+function buildResultPreview(rows, students, selectedClass, selectedExamType, uploadStatus) {
+  const headers = rows[0].map(normalizeKey)
+  const studentById = new Map(students.map(student => [student.id, student]))
+  const studentByRollClass = new Map(students.map(student => [
+    makeStudentResultKey(student.rollNumber, student.class),
+    student,
+  ]))
+
+  return rows.slice(1)
+    .map((row, index) => {
+      const record = headers.reduce((data, header, headerIndex) => {
+        data[header] = row[headerIndex] || ''
+        return data
+      }, {})
+      const rowNumber = index + 2
+      const className = String(record.class || selectedClass || '').trim()
+      const examType = String(record.examtype || record.exam || selectedExamType || '').trim()
+      const status = normalizeKey(record.status) === 'published' ? 'published' : uploadStatus
+      const student = findStudentForResultRow(record, className, studentById, studentByRollClass)
+      const subjectResults = extractSubjectResults(record, headers)
+      const errors = []
+
+      if (!student) errors.push('Student ID or roll/class not matched')
+      if (selectedClass && className && normalizeKey(selectedClass) !== normalizeKey(className)) errors.push('Class does not match selected class')
+      if (!examType) errors.push('Exam type is missing')
+      if (subjectResults.length === 0) errors.push('No valid subject marks found')
+
+      subjectResults.forEach(subject => {
+        if (subject.marks < 0) errors.push(`${subject.subject} has negative marks`)
+        if (subject.maxMarks <= 0) errors.push(`${subject.subject} max marks must be greater than zero`)
+        if (subject.marks > subject.maxMarks) errors.push(`${subject.subject} marks exceed max marks`)
+      })
+
+      const totalMarks = subjectResults.reduce((sum, subject) => sum + subject.marks, 0)
+      const totalMaxMarks = subjectResults.reduce((sum, subject) => sum + subject.maxMarks, 0)
+      const percentage = calculatePercentage(totalMarks, totalMaxMarks)
+
+      return {
+        rowNumber,
+        student,
+        className,
+        examType,
+        status,
+        subjectResults,
+        percentage,
+        gpa: calculateGpa(percentage),
+        errors,
+      }
+    })
+    .filter(row => row.student || row.subjectResults.length || row.className || row.examType)
+}
+
+function findStudentForResultRow(record, className, studentById, studentByRollClass) {
+  const studentId = String(record.studentid || '').trim()
+  if (studentId && studentById.has(studentId)) return studentById.get(studentId)
+
+  const rollNumber = record.rollnumber || record.rollno
+  return studentByRollClass.get(makeStudentResultKey(rollNumber, className))
+}
+
+function extractSubjectResults(record, headers) {
+  const defaultMaxMarks = Number(record.maxmarks || 100)
+  if (record.subject || record.marks) {
+    const subject = String(record.subject || '').trim()
+    const marks = Number(record.marks)
+    if (!subject || Number.isNaN(marks)) return []
+    return [{
+      subject,
+      marks,
+      maxMarks: Number.isNaN(defaultMaxMarks) ? 100 : defaultMaxMarks,
+    }]
+  }
+
+  return headers
+    .filter(header => header && !RESULT_META_KEYS.has(header))
+    .map(header => {
+      const value = record[header]
+      if (value === undefined || value === null || String(value).trim() === '') return null
+      const marks = Number(value)
+      if (Number.isNaN(marks)) return null
+      const subject = RESULT_SUBJECTS.find(item => normalizeKey(item) === header) || header
+      return {
+        subject,
+        marks,
+        maxMarks: Number.isNaN(defaultMaxMarks) ? 100 : defaultMaxMarks,
+      }
+    })
+    .filter(Boolean)
+}
+
+function parseCsvRows(text) {
+  const rows = []
+  let row = []
+  let cell = ''
+  let inQuotes = false
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i]
+    const nextChar = text[i + 1]
+
+    if (char === '"' && inQuotes && nextChar === '"') {
+      cell += '"'
+      i += 1
+    } else if (char === '"') {
+      inQuotes = !inQuotes
+    } else if (char === ',' && !inQuotes) {
+      row.push(cell.trim())
+      cell = ''
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') i += 1
+      row.push(cell.trim())
+      rows.push(row)
+      row = []
+      cell = ''
+    } else {
+      cell += char
+    }
+  }
+
+  if (cell || row.length) {
+    row.push(cell.trim())
+    rows.push(row)
+  }
+
+  return rows
+}
+
+function normalizeKey(value) {
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function makeStudentResultKey(rollNumber, className) {
+  return `${normalizeKey(rollNumber)}|${normalizeKey(className)}`
+}
+
+function groupResultsByExam(results) {
+  const groups = new Map()
+  results.forEach(result => {
+    const examType = result.examType || 'Published Result'
+    if (!groups.has(examType)) groups.set(examType, [])
+    groups.get(examType).push(result)
+  })
+
+  return Array.from(groups.entries()).map(([examType, examResults]) => {
+    const totalMarks = examResults.reduce((sum, result) => sum + Number(result.marks || 0), 0)
+    const totalMaxMarks = examResults.reduce((sum, result) => sum + Number(result.maxMarks || 100), 0)
+    const percentage = calculatePercentage(totalMarks, totalMaxMarks)
+    return {
+      examType,
+      results: examResults,
+      totalMarks,
+      totalMaxMarks,
+      percentage,
+      gpa: calculateGpa(percentage),
+    }
+  })
+}
+
+function printMarksheet(student, group) {
+  const studentName = student?.name || localStorage.getItem('studentName') || 'Student'
+  const studentClass = student?.class || localStorage.getItem('studentClass') || ''
+  const rows = group.results.map(result => `
+    <tr>
+      <td>${escapeHtml(result.subject)}</td>
+      <td>${Number(result.marks || 0)}</td>
+      <td>${Number(result.maxMarks || 100)}</td>
+      <td>${getGrade(Number(result.marks || 0))}</td>
+    </tr>
+  `).join('')
+  const printable = window.open('', '_blank')
+  if (!printable) return
+
+  printable.document.write(`
+    <html>
+      <head>
+        <title>${escapeHtml(studentName)} - ${escapeHtml(group.examType)} Marksheet</title>
+        <style>
+          body { font-family: Arial, sans-serif; color: #111827; padding: 32px; }
+          h1, h2, p { margin: 0; }
+          .header { text-align: center; border-bottom: 2px solid #111827; padding-bottom: 18px; margin-bottom: 22px; }
+          .meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 22px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
+          th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+          th { background: #f1f5f9; }
+          .summary { display: flex; gap: 20px; font-weight: 700; }
+          @media print { button { display: none; } body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>PRATHMIK KUMARSHALA DEVLA</h1>
+          <h2>${escapeHtml(group.examType)} Marksheet</h2>
+        </div>
+        <div class="meta">
+          <p><strong>Student:</strong> ${escapeHtml(studentName)}</p>
+          <p><strong>Class:</strong> ${escapeHtml(studentClass)}</p>
+          <p><strong>Roll No:</strong> ${escapeHtml(student?.rollNumber || '')}</p>
+          <p><strong>Status:</strong> Published</p>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Subject</th><th>Marks</th><th>Max Marks</th><th>Grade</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="summary">
+          <p>Total: ${group.totalMarks}/${group.totalMaxMarks}</p>
+          <p>Percentage: ${group.percentage}%</p>
+          <p>GPA: ${group.gpa}</p>
+        </div>
+        <script>window.print()</script>
+      </body>
+    </html>
+  `)
+  printable.document.close()
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
 }
 
 function StaffManagement() {
@@ -1342,8 +1920,7 @@ function StudentDashboard() {
       const percentage = total > 0 ? Math.round((present / total) * 100) : 0
       setStats({ percentage, present, absent })
 
-      const allResults = await (await getDbApi()).getAllResults()
-      const studentResults = allResults.filter(result => resultBelongsToStudent(result, student.name, student.class))
+      const studentResults = await (await getDbApi()).getPublishedResultsByStudent(studentId)
       setResults(studentResults.slice(0, 3))
 
       const allNotices = await (await getDbApi()).getAllAnnouncements()
@@ -1388,7 +1965,7 @@ function StudentDashboard() {
             {results.length === 0 ? <p style={{ padding: '1rem', color: '#64748b' }}>No results yet</p> : results.map(result => (
               <div key={result.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid var(--border)' }}>
                 <span>{result.subject}</span>
-                <span className="badge badge-success">{result.marks} ({result.grade})</span>
+                <span className="badge badge-success">{result.marks} ({getGrade(Number(result.marks))})</span>
               </div>
             ))}
           </div>
@@ -1462,8 +2039,8 @@ const fetchAttendance = async () => {
 }
 
 function MyResults() {
-  const studentName = localStorage.getItem('studentName') || ''
-  const studentClass = localStorage.getItem('studentClass') || ''
+  const studentId = localStorage.getItem('studentId')
+  const [student, setStudent] = useState(null)
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -1472,15 +2049,24 @@ function MyResults() {
   }, [])
 
   const fetchResults = async () => {
+    if (!studentId) {
+      setLoading(false)
+      return
+    }
     try {
-      const allResults = await (await getDbApi()).getAllResults()
-      setResults(allResults.filter(result => resultBelongsToStudent(result, studentName, studentClass)))
+      const dbApi = await getDbApi()
+      const currentStudent = await dbApi.getStudentById(studentId)
+      const studentResults = await dbApi.getPublishedResultsByStudent(studentId)
+      setStudent(currentStudent)
+      setResults(studentResults)
     } catch (e) {
       console.error(e)
     } finally {
       setLoading(false)
     }
   }
+
+  const resultGroups = groupResultsByExam(results)
 
   return (
     <div className="app">
@@ -1493,24 +2079,37 @@ function MyResults() {
           {loading ? <p>Loading...</p> : results.length === 0 ? (
             <p style={{ padding: '1rem', color: 'var(--text-light)' }}>No results published yet</p>
           ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Subject</th>
-                  <th>Marks</th>
-                  <th>Grade</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map(result => (
-                  <tr key={result.id || result._id}>
-                    <td>{result.subject}</td>
-                    <td>{result.marks}{result.maxMarks ? `/${result.maxMarks}` : ''}</td>
-                    <td><span className="badge badge-success">{getGrade(Number(result.marks))}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="marksheet-list">
+              {resultGroups.map(group => (
+                <div className="marksheet-card" key={group.examType}>
+                  <div className="marksheet-header">
+                    <div>
+                      <h3 className="card-header">{group.examType}</h3>
+                      <p>Percentage: {group.percentage}% | GPA: {group.gpa}</p>
+                    </div>
+                    <button className="btn btn-secondary" onClick={() => printMarksheet(student, group)}>Download PDF</button>
+                  </div>
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Subject</th>
+                        <th>Marks</th>
+                        <th>Grade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.results.map(result => (
+                        <tr key={result.id || result._id}>
+                          <td>{result.subject}</td>
+                          <td>{result.marks}{result.maxMarks ? `/${result.maxMarks}` : ''}</td>
+                          <td><span className="badge badge-success">{getGrade(Number(result.marks))}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
