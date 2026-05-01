@@ -4,6 +4,9 @@ import './index.css'
 import * as db from './lib/db'
 import { uploadImage } from './lib/storage'
 
+// Anime.js loaded globally from CDN
+const anime = window.anime
+
 function App() {
   return (
     <BrowserRouter>
@@ -216,12 +219,28 @@ function LoginPage() {
 function AdminDashboard() {
   const [stats, setStats] = useState({ students: 0, staff: 0, announcements: 0, attendance: 0 })
   const [announcements, setAnnouncements] = useState([])
+  const [animated, setAnimated] = useState(false)
 
   useEffect(() => {
     fetchStudentsCount()
     fetchStaffCount()
     fetchAnnouncements()
   }, [])
+
+  useEffect(() => {
+    if (!animated && stats.students > 0) {
+      setAnimated(true)
+      // Animate stat cards on load
+      anime({
+        targets: '.stat-card',
+        translateY: [20, 0],
+        opacity: [0, 1],
+        easing: 'easeOutExpo',
+        duration: 800,
+        delay: anime.stagger(100)
+      })
+    }
+  }, [stats, animated])
 
   const fetchStudentsCount = async () => {
     try {
@@ -399,9 +418,9 @@ function StudentManagement() {
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {students.map(student => (
-                  <tr key={student.id}>
+              <tbody className="data-loaded">
+                {students.map((student, index) => (
+                  <tr key={student.id} style={{ opacity: 0, animation: `fadeIn 0.4s ease-out ${index * 50}ms forwards` }}>
                     <td>{student.rollNumber}</td>
                     <td>{student.name}</td>
                     <td>{student.class}</td>
