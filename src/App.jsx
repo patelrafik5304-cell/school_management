@@ -585,9 +585,42 @@ function AttendanceManagement() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [attendance, setAttendance] = useState({})
   const [loading, setLoading] = useState(true)
+  const [dateError, setDateError] = useState('')
+
+  const getMinDate = () => {
+    const d = new Date()
+    d.setDate(d.getDate() - 15)
+    return d.toISOString().split('T')[0]
+  }
+
+  const getMaxDate = () => {
+    return new Date().toISOString().split('T')[0]
+  }
+
+  const validateDate = (selectedDate) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const selected = new Date(selectedDate)
+    selected.setHours(0, 0, 0, 0)
+    const fifteenDaysAgo = new Date()
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15)
+    fifteenDaysAgo.setHours(0, 0, 0, 0)
+
+    if (selected > today) {
+      return 'Future dates are not allowed'
+    }
+    if (selected < fifteenDaysAgo) {
+      return 'You can only mark attendance for the last 15 days'
+    }
+    return ''
+  }
 
   useEffect(() => {
-    fetchData()
+    const error = validateDate(date)
+    setDateError(error)
+    if (!error) {
+      fetchData()
+    }
   }, [date])
 
   const fetchData = async () => {
@@ -608,6 +641,7 @@ function AttendanceManagement() {
   }
 
   const markAttendance = async (studentId, status) => {
+    if (dateError) return
     try {
       await (await getDbApi()).addAttendance({ studentId, date, status })
       setAttendance(prev => ({ ...prev, [studentId]: status }))
@@ -631,8 +665,16 @@ function AttendanceManagement() {
               className="form-input"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              min={getMinDate()}
+              max={getMaxDate()}
               style={{ maxWidth: '200px' }}
             />
+            <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
+              Attendance can only be marked for the last 15 days
+            </p>
+            {dateError && (
+              <p className="form-error" style={{ marginTop: '0.5rem' }}>{dateError}</p>
+            )}
           </div>
           {loading ? <p>Loading...</p> : (
             <table className="table">
@@ -655,6 +697,7 @@ function AttendanceManagement() {
                          className={`btn ${attendance[student._id] === 'Present' ? 'btn-primary' : 'btn-secondary'}`}
                          style={{ marginRight: '0.5rem' }}
                          onClick={() => markAttendance(student._id, 'Present')}
+                         disabled={!!dateError}
                        >
                          Present
                        </button>
@@ -662,15 +705,18 @@ function AttendanceManagement() {
                          className={`btn ${attendance[student._id] === 'Absent' ? 'btn-danger' : 'btn-secondary'}`}
                          style={{ marginRight: '0.5rem' }}
                          onClick={() => markAttendance(student._id, 'Absent')}
+                         disabled={!!dateError}
                        >
                          Absent
                        </button>
                        <button
                          className={`btn ${attendance[student._id] === 'No Attendance' ? 'btn-warning' : 'btn-secondary'}`}
                          onClick={() => markAttendance(student._id, 'No Attendance')}
+                         disabled={!!dateError}
                        >
                          No Attendance
                        </button>
+                       {dateError && <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: 'var(--danger)' }}>Invalid date</span>}
                      </td>
                   </tr>
                 ))}
