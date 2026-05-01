@@ -550,6 +550,15 @@ body {
   color: var(--text-light);
 }
 
+.login-school-banner {
+  display: block;
+  width: min(100%, 310px);
+  margin: 0.75rem auto 0.85rem;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+}
+
 .role-tabs {
   display: flex;
   gap: 0.5rem;
@@ -1887,6 +1896,11 @@ body {
   .staff-role,
   .announcement-date {
     color: #a8b7cc;
+  }
+
+  .login-school-banner {
+    background: #ffffff;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.26);
   }
 
   .card,

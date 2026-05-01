@@ -38,7 +38,12 @@ function EntryPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <h1 className="login-title">Prathmik Kumarshala</h1>
+          <h1 className="login-title">PRATHMIK KUMARSHALA</h1>
+          <img
+            className="login-school-banner"
+            src="/education-rights-banner.png"
+            alt="Education rights banner"
+          />
           <p className="login-subtitle">Student Attendance Management System</p>
         </div>
         <div style={{ display: 'grid', gap: '1rem', marginTop: '1.5rem' }}>
@@ -77,7 +82,7 @@ function EntryPage() {
         </div>
         <div style={{ marginTop: '2rem', textAlign: 'center' }}>
           <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
-            Welcome to Prathmik Kumarshala - Primary School Management System
+            Welcome to PRATHMIK KUMARSHALA - Primary School Management System
           </p>
         </div>
       </div>
@@ -144,7 +149,12 @@ function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <h1 className="login-title">Prathmik Kumarshala</h1>
+          <h1 className="login-title">PRATHMIK KUMARSHALA</h1>
+          <img
+            className="login-school-banner"
+            src="/education-rights-banner.png"
+            alt="Education rights banner"
+          />
           <p className="login-subtitle">Sign in to continue</p>
         </div>
         
@@ -265,7 +275,7 @@ function AdminDashboard() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/admin" className="nav-link">Dashboard</Link>
           <Link to="/admin/students" className="nav-link">Students</Link>
@@ -386,7 +396,7 @@ function StudentManagement() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/admin" className="nav-link">Dashboard</Link>
           <Link to="/admin/students" className="nav-link">Students</Link>
@@ -535,7 +545,7 @@ function AttendanceManagement() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/admin" className="nav-link">Dashboard</Link>
           <Link to="/admin/students" className="nav-link">Students</Link>
@@ -640,7 +650,7 @@ function ResultsManagement() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/admin" className="nav-link">Dashboard</Link>
           <Link to="/admin/students" className="nav-link">Students</Link>
@@ -762,7 +772,7 @@ function StaffManagement() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/admin" className="nav-link">Dashboard</Link>
           <Link to="/admin/students" className="nav-link">Students</Link>
@@ -851,7 +861,7 @@ function Announcements() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/admin" className="nav-link">Dashboard</Link>
           <Link to="/admin/students" className="nav-link">Students</Link>
@@ -1071,7 +1081,7 @@ function GalleryManagement() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/admin" className="nav-link">Dashboard</Link>
           <Link to="/admin/students" className="nav-link">Students</Link>
@@ -1395,7 +1405,7 @@ function StudentDashboard() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/student" className="nav-link">Dashboard</Link>
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
@@ -1481,7 +1491,7 @@ const fetchAttendance = async () => {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/student" className="nav-link">Dashboard</Link>
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
@@ -1542,7 +1552,7 @@ function MyResults() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/student" className="nav-link">Dashboard</Link>
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
@@ -1607,7 +1617,7 @@ function StudentAnnouncements() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/student" className="nav-link">Dashboard</Link>
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
@@ -1662,7 +1672,7 @@ function StudentGallery() {
   return (
     <div className="app">
       <nav className="navbar">
-        <Link to="/" className="navbar-brand">Prathmik Kumarshala</Link>
+        <Link to="/" className="navbar-brand">PRATHMIK KUMARSHALA</Link>
         <div className="navbar-nav">
           <Link to="/student" className="nav-link">Dashboard</Link>
           <Link to="/student/attendance" className="nav-link">Attendance</Link>
