@@ -1992,3 +1992,123 @@ body {
     }
   }
 }
+
+/* Polished compact navigation tabs */
+.navbar {
+  gap: 1.25rem;
+}
+
+.navbar-brand {
+  flex: 0 1 auto;
+  font-size: clamp(1.05rem, 2vw, 1.55rem);
+  max-width: 28rem;
+}
+
+.navbar-nav {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.navbar-nav .nav-link,
+.navbar-nav .btn-secondary {
+  min-height: 38px !important;
+  min-width: auto !important;
+  padding: 0.48rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  line-height: 1;
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.navbar-nav .nav-link {
+  background: transparent;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:focus-visible {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.16);
+  color: #1d4ed8;
+}
+
+.navbar-nav .nav-link::after {
+  display: none;
+}
+
+.navbar-nav .btn-secondary {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(148, 163, 184, 0.34);
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .navbar {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 0.85rem 1rem;
+  }
+
+  .navbar-brand {
+    max-width: 100%;
+    font-size: clamp(1.35rem, 5vw, 2rem);
+  }
+
+  .navbar-nav {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.45rem;
+    margin-top: 0.15rem;
+  }
+
+  .navbar-nav .nav-link,
+  .navbar-nav .btn-secondary {
+    min-height: 36px !important;
+    padding: 0.46rem 0.78rem;
+    font-size: clamp(0.9rem, 3.2vw, 1rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0.75rem;
+  }
+
+  .navbar-brand {
+    font-size: 1.18rem;
+  }
+
+  .navbar-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .navbar-nav .nav-link,
+  .navbar-nav .btn-secondary {
+    width: 100%;
+    justify-content: center;
+    padding: 0.55rem 0.45rem;
+    font-size: 0.88rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .navbar-nav .nav-link {
+    color: #dbeafe;
+  }
+
+  .navbar-nav .nav-link:hover,
+  .navbar-nav .nav-link:focus-visible {
+    background: rgba(96, 165, 250, 0.14);
+    border-color: rgba(147, 197, 253, 0.24);
+    color: #bfdbfe;
+  }
+
+  .navbar-nav .btn-secondary {
+    background: rgba(15, 23, 42, 0.58);
+    border-color: rgba(148, 163, 184, 0.26);
+  }
+}
