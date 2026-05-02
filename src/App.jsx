@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import './index.css'
-import './scrollAnimations.js'
 import PieChart3D from './components/PieChart3D'
 
 // Anime.js loaded globally from CDN
@@ -390,6 +389,7 @@ function AdminDashboard() {
             <div className="grid" style={{ gap: '1rem' }}>
               <Link to="/admin/students" className="btn btn-primary">Manage Students</Link>
               <Link to="/admin/attendance" className="btn btn-primary btn-touch">Mark Attendance</Link>
+              <Link to="/admin/staff" className="btn btn-primary">Manage Staff</Link>
               <Link to="/admin/announcements" className="btn btn-primary">Post Announcement</Link>
               <Link to="/admin/gallery" className="btn btn-secondary">Upload Photos</Link>
             </div>
