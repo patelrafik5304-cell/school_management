@@ -2,13 +2,13 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, getDoc, addDoc, deleteDoc, doc, query, orderBy, where, updateDoc, limit as firestoreLimit } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAqlHLlwyO4Q0CeowDoV_8dtzI_Mni7pIE",
-  authDomain: "schoolmanagement-4734f.firebaseapp.com",
-  projectId: "schoolmanagement-4734f",
-  storageBucket: "schoolmanagement-4734f.firebasestorage.app",
-  messagingSenderId: "717395679779",
-  appId: "1:717395679779:web:867e51284281317e1caf96",
-  measurementId: "G-LQJF0FJEKG"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
@@ -47,6 +47,11 @@ export async function getStudentById(id) {
   return { id: docSnap.id, ...docSnap.data() };
 }
 
+/**
+ * SECURITY WARNING: Querying passwords in plain text is highly insecure.
+ * Transition to Firebase Authentication (signInWithEmailAndPassword) 
+ * as soon as possible.
+ */
 export async function loginStudent(username, password) {
   const q = query(studentsRef, where('username', '==', username), where('password', '==', password));
   const snapshot = await getDocs(q);
@@ -123,21 +128,11 @@ export async function updateStaff(id, data) {
 }
 
 export async function getAllAnnouncements() {
-  const now = new Date();
   const q = query(announcementsRef, orderBy('date', 'desc'));
   const snapshot = await getDocs(q);
-  const announcements = snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
-  
-  // Filter out expired announcements and delete them
-  const validAnnouncements = [];
-  for (const ann of announcements) {
-    if (ann.expiresAt && new Date(ann.expiresAt) < now) {
-      await deleteDoc(doc(db, 'announcements', ann.id)).catch(e => console.error('Failed to delete expired announcement:', e));
-    } else {
-      validAnnouncements.push(ann);
-    }
-  }
-  return validAnnouncements;
+  // SECURITY: Removed client-side deletion. Automated cleanup should 
+  // be handled by a Scheduled Cloud Function, not the client's browser.
+  return snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
 }
 
 export async function addAnnouncement(data) {

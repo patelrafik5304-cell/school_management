@@ -4,13 +4,13 @@ import { getAuth, signInWithEmailAndPassword, signOut, createUserWithEmailAndPas
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAqlHLlwyO4Q0CeowDoV_8dtzI_Mni7pIE",
-  authDomain: "schoolmanagement-4734f.firebaseapp.com",
-  projectId: "schoolmanagement-4734f",
-  storageBucket: "schoolmanagement-4734f.firebasestorage.app",
-  messagingSenderId: "717395679779",
-  appId: "1:717395679779:web:867e51284281317e1caf96",
-  measurementId: "G-LQJF0FJEKG"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);

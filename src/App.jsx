@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import './index.css'
+import './scrollAnimations.js'
 import PieChart3D from './components/PieChart3D'
 
 // Anime.js loaded globally from CDN
@@ -352,20 +353,20 @@ function AdminDashboard() {
     <div className="app">
       <AppNavbar variant="admin" />
       <div className="container">
-        <div className="page-header">
-          <h1 className="page-title">Admin Dashboard</h1>
-        </div>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-value">{stats.staff}</div>
+      <div className="page-header reveal-on-scroll">
+        <h1 className="page-title gradient-text-animate">Admin Dashboard</h1>
+      </div>
+      <div className="stats-grid stagger-container">
+          <div className="stat-card stagger-item hover-lift pulse-glow">
+            <div className="stat-value stat-value-animated">{stats.staff}</div>
             <div className="stat-label">Total Staff</div>
           </div>
-          <div className="stat-card">
-            <div className="stat-value">{stats.attendance}%</div>
+          <div className="stat-card stagger-item hover-lift pulse-glow">
+            <div className="stat-value stat-value-animated">{stats.attendance}%</div>
             <div className="stat-label">Attendance</div>
           </div>
-          <div className="stat-card">
-            <div className="stat-value">{stats.announcements}</div>
+          <div className="stat-card stagger-item hover-lift pulse-glow">
+            <div className="stat-value stat-value-animated">{stats.announcements}</div>
             <div className="stat-label">Announcements</div>
           </div>
         </div>
@@ -454,10 +455,10 @@ function StudentManagement() {
     <div className="app">
       <AppNavbar variant="admin" />
       <div className="container">
-        <div className="page-header">
-          <h1 className="page-title">Student Management</h1>
-          <button className="btn btn-primary btn-touch" onClick={() => setShowModal(true)}>+ Add Student</button>
-        </div>
+      <div className="page-header reveal-on-scroll">
+        <h1 className="page-title gradient-text-animate">Student Management</h1>
+        <button className="btn btn-primary btn-touch btn-magnetic reveal-on-scroll" onClick={() => setShowModal(true)}>+ Add Student</button>
+      </div>
         <div className="card">
           {loading ? <p>Loading...</p> : students.length === 0 ? (
             <p>No students found</p>
@@ -476,15 +477,15 @@ function StudentManagement() {
               </thead>
               <tbody className="data-loaded">
                 {students.map((student, index) => (
-                  <tr key={student.id} style={{ opacity: 0, animation: `fadeInUp 0.4s ease-out ${index * 50}ms forwards` }}>
+                  <tr key={student.id} className="table-row-animated stagger-list-item" style={{ animationDelay: `${index * 0.05}s` }}>
                     <td>{student.rollNumber}</td>
                     <td>{student.name}</td>
                     <td>{student.class}</td>
                     <td>{student.username || '-'}</td>
                     <td>{student.password || '-'}</td>
-                    <td><span className="badge badge-success">{student.status || 'Active'}</span></td>
+                    <td><span className="badge badge-success badge-pulse">{student.status || 'Active'}</span></td>
                     <td>
-                      <button style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }} onClick={() => handleDelete(student.id)}>Delete</button>
+                      <button className="btn-scale-hover" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }} onClick={() => handleDelete(student.id)}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -625,9 +626,9 @@ function AttendanceManagement() {
     <div className="app">
       <AppNavbar variant="admin" />
       <div className="container">
-        <div className="page-header">
-          <h1 className="page-title">Attendance Management</h1>
-        </div>
+      <div className="page-header reveal-on-scroll">
+        <h1 className="page-title gradient-text-animate">Attendance Management</h1>
+      </div>
         <div className="card">
           <div className="form-group">
             <label className="form-label">Select Date</label>
@@ -657,9 +658,9 @@ function AttendanceManagement() {
                   <th>Attendance</th>
                 </tr>
               </thead>
-              <tbody>
-                {students.map(student => (
-                  <tr key={student._id}>
+              <tbody className="data-loaded">
+                {students.map((student, index) => (
+                  <tr key={student._id} className="table-row-animated stagger-list-item" style={{ animationDelay: `${index * 0.05}s` }}>
                     <td>{student.rollNumber}</td>
                     <td>{student.name}</td>
                     <td>{student.class}</td>
@@ -930,16 +931,16 @@ function ResultsManagement() {
     <div className="app">
       <AppNavbar variant="admin" />
       <div className="container">
-        <div className="page-header">
-          <h1 className="page-title">Results Management</h1>
+        <div className="page-header reveal-on-scroll">
+          <h1 className="page-title gradient-text-animate">Results Management</h1>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <button className="btn btn-secondary btn-touch" onClick={() => downloadResultTemplate('csv')}>CSV Template</button>
-            <button className="btn btn-secondary btn-touch" onClick={() => downloadResultTemplate('xlsx')}>Excel Template</button>
-            <label className="btn btn-secondary btn-touch" style={{ cursor: 'pointer' }}>
+            <button className="btn btn-secondary btn-touch btn-magnetic reveal-on-scroll" onClick={() => downloadResultTemplate('csv')}>CSV Template</button>
+            <button className="btn btn-secondary btn-touch btn-magnetic reveal-on-scroll" onClick={() => downloadResultTemplate('xlsx')}>Excel Template</button>
+            <label className="btn btn-secondary btn-touch btn-magnetic reveal-on-scroll" style={{ cursor: 'pointer' }}>
               Upload File
               <input type="file" accept=".csv,.xlsx,.xls,text/csv" onChange={handleCsvUpload} style={{ display: 'none' }} />
             </label>
-            <button className="btn btn-primary btn-touch" onClick={() => setShowModal(true)}>+ Add Result</button>
+            <button className="btn btn-primary btn-touch btn-magnetic reveal-on-scroll" onClick={() => setShowModal(true)}>+ Add Result</button>
           </div>
         </div>
 
@@ -995,9 +996,9 @@ function ResultsManagement() {
                     <th>Validation</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {bulkPreview.map(row => (
-                    <tr key={row.rowNumber} className={row.errors.length ? 'row-error' : ''}>
+                <tbody className="data-loaded">
+                  {bulkPreview.map((row, index) => (
+                    <tr key={row.rowNumber} className={`table-row-animated stagger-list-item ${row.errors.length ? 'row-error' : ''}`} style={{ animationDelay: `${index * 0.05}s` }}>
                       <td>{row.rowNumber}</td>
                       <td>{row.student ? `${row.student.name} (${row.student.rollNumber})` : 'Not matched'}</td>
                       <td>{row.className || '-'}</td>
@@ -1506,9 +1507,9 @@ function StaffManagement() {
     <div className="app">
       <AppNavbar variant="admin" />
       <div className="container">
-        <div className="page-header">
-          <h1 className="page-title">Staff Management</h1>
-          <button className="btn btn-primary btn-touch" onClick={() => setShowAddModal(true)}>+ Add Staff</button>
+        <div className="page-header reveal-on-scroll">
+          <h1 className="page-title gradient-text-animate">Staff Management</h1>
+          <button className="btn btn-primary btn-touch btn-magnetic reveal-on-scroll" onClick={() => setShowAddModal(true)}>+ Add Staff</button>
         </div>
         {loading ? <p>Loading...</p> : staff.length === 0 ? (
           <p>No staff found. Click "+ Add Staff" to add one.</p>

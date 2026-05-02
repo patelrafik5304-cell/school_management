@@ -1905,7 +1905,9 @@ body {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+@import './advanced-animations.css';
+
+:root {
     --primary: #60a5fa;
     --primary-dark: #93c5fd;
     --primary-light: #22d3ee;
