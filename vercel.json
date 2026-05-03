@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "rm -rf dist && npm run build",
-  "outputDirectory": "dist",
-  "cleanUrls": true
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 }
