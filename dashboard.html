@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School ERP Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body { background: #f8fafc; color: #334155; line-height: 1.6; padding: 20px; }
+    
+    .top-bar { display: flex; gap: 16px; align-items: center; margin-bottom: 32px; flex-wrap: wrap; }
+    
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+    
+    .class-select-wrapper { position: relative; }
+    .class-select-btn { background: white; border: 1px solid #e2e8f0; color: #334155; min-width: 160px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+    .class-select-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+    
+    .add-student-btn { background: #3b82f6; color: white; }
+    .add-student-btn:hover { background: #2563eb; }
+    
+    .class-dropdown { position: absolute; top: calc(100% + 8px); left: 0; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 160px; opacity: 0; transform: translateY(-10px); transition: opacity 0.2s ease, transform 0.2s ease; pointer-events: none; z-index: 100; border: 1px solid #e2e8f0; }
+    .class-dropdown.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .class-dropdown ul { list-style: none; padding: 8px 0; margin: 0; }
+    .class-dropdown li { padding: 10px 16px; cursor: pointer; transition: background 0.2s ease; color: #475569; }
+    .class-dropdown li:hover { background: #f1f5f9; }
+    .class-dropdown li.selected { background: #dbeafe; color: #1d4ed8; font-weight: 500; }
+    
+    .dashboard-section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    .dashboard-section h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #1e293b; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f8fafc; font-weight: 500; color: #64748b; font-size: 14px; }
+    tr:hover { background: #f8fafc; }
+    .no-data { color: #94a3b8; text-align: center; padding: 24px; font-size: 14px; }
+    
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal.active { display: flex; }
+    .modal-content { background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 400px; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .close-modal { position: absolute; top: 12px; right: 16px; cursor: pointer; font-size: 24px; color: #94a3b8; }
+    .close-modal:hover { color: #475569; }
+    .form-group { margin-bottom: 16px; }
+    .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+    .form-group input[readonly] { background: #f8fafc; color: #64748b; }
+    .form-group input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    
+    .attendance-controls { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .attendance-controls input[type="date"] { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; }
+    .attendance-controls .btn { background: #10b981; color: white; }
+    .attendance-controls .btn:hover { background: #059669; }
+    
+    .present-btn, .absent-btn { padding: 6px 12px; border-radius: 6px; font-size: 12px; border: none; cursor: pointer; }
+    .present-btn { background: #d1fae5; color: #065f46; }
+    .absent-btn { background: #fee2e2; color: #991b1b; }
+    .present-btn.active { background: #10b981; color: white; }
+    .absent-btn.active { background: #ef4444; color: white; }
+    
+    @media (max-width: 768px) {
+      .top-bar { flex-direction: column; align-items: flex-start; }
+      .class-select-btn, .add-student-btn { width: 100%; }
+      th, td { padding: 8px 12px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="class-select-wrapper">
+      <button id="classSelectBtn" class="btn class-select-btn">Select Class ▼</button>
+      <div id="classDropdown" class="class-dropdown">
+        <ul>
+          <li data-class="Balvatika">Balvatika</li>
+          <li data-class="Class 1">Class 1</li>
+          <li data-class="Class 2">Class 2</li>
+          <li data-class="Class 3">Class 3</li>
+          <li data-class="Class 4">Class 4</li>
+          <li data-class="Class 5">Class 5</li>
+          <li data-class="Class 6">Class 6</li>
+          <li data-class="Class 7">Class 7</li>
+          <li data-class="Class 8">Class 8</li>
+        </ul>
+      </div>
+    </div>
+    <button id="addStudentBtn" class="btn add-student-btn">+ Add Student</button>
+  </div>
+
+  <section class="dashboard-section">
+    <h2>Students</h2>
+    <div id="studentsTableContainer"></div>
+  </section>
+
+  <section class="dashboard-section">
+    <h2>Attendance</h2>
+    <div class="attendance-controls">
+      <input type="date" id="attendanceDate" value="">
+      <button id="loadAttendanceBtn" class="btn">Load / Save Attendance</button>
+    </div>
+    <div id="attendanceTableContainer"></div>
+  </section>
+
+  <section class="dashboard-section">
+    <h2>Results Dashboard</h2>
+    <div id="resultsTableContainer"></div>
+  </section>
+
+  <div id="addStudentModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" id="closeStudentModal">&times;</span>
+      <h3>Add New Student</h3>
+      <form id="addStudentForm">
+        <div class="form-group">
+          <input type="text" id="studentName" placeholder="Student Name" required>
+        </div>
+        <div class="form-group">
+          <input type="text" id="studentRoll" placeholder="Roll Number" required>
+        </div>
+        <div class="form-group">
+          <input type="text" id="studentClass" placeholder="Class" readonly>
+        </div>
+        <button type="submit" class="btn add-student-btn" style="width: 100%;">Add Student</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let selectedClass = localStorage.getItem('selectedClass') || null;
+
+    const classSelectBtn = document.getElementById('classSelectBtn');
+    const classDropdown = document.getElementById('classDropdown');
+    const addStudentBtn = document.getElementById('addStudentBtn');
+    const addStudentModal = document.getElementById('addStudentModal');
+    const closeStudentModal = document.getElementById('closeStudentModal');
+    const addStudentForm = document.getElementById('addStudentForm');
+    const studentClassInput = document.getElementById('studentClass');
+    const studentsTableContainer = document.getElementById('studentsTableContainer');
+    const attendanceTableContainer = document.getElementById('attendanceTableContainer');
+    const resultsTableContainer = document.getElementById('resultsTableContainer');
+    const attendanceDateInput = document.getElementById('attendanceDate');
+    const loadAttendanceBtn = document.getElementById('loadAttendanceBtn');
+
+    attendanceDateInput.value = new Date().toISOString().split('T')[0];
+
+    if (selectedClass) {
+      classSelectBtn.textContent = `${selectedClass} ▼`;
+      classDropdown.querySelectorAll('li').forEach(item => {
+        item.classList.toggle('selected', item.dataset.class === selectedClass);
+      });
+      loadStudents();
+      loadAttendance();
+      loadResults();
+    } else {
+      studentsTableContainer.innerHTML = '<div class="no-data">Please select a class to view students</div>';
+      attendanceTableContainer.innerHTML = '<div class="no-data">Please select a class to mark attendance</div>';
+      resultsTableContainer.innerHTML = '<div class="no-data">Please select a class to view results</div>';
+    }
+
+    classSelectBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      classDropdown.classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!classSelectBtn.contains(e.target) && !classDropdown.contains(e.target)) {
+        classDropdown.classList.remove('active');
+      }
+    });
+
+    classDropdown.querySelectorAll('li').forEach(item => {
+      item.addEventListener('click', () => {
+        setClass(item.dataset.class);
+        classDropdown.classList.remove('active');
+      });
+    });
+
+    function setClass(className) {
+      selectedClass = className;
+      localStorage.setItem('selectedClass', selectedClass);
+      classSelectBtn.textContent = `${selectedClass} ▼`;
+      classDropdown.querySelectorAll('li').forEach(item => {
+        item.classList.toggle('selected', item.dataset.class === selectedClass);
+      });
+      loadStudents();
+      loadAttendance();
+      loadResults();
+    }
+
+    addStudentBtn.addEventListener('click', () => {
+      if (!selectedClass) { alert('Please select a class first'); return; }
+      studentClassInput.value = selectedClass;
+      addStudentModal.classList.add('active');
+    });
+
+    closeStudentModal.addEventListener('click', () => {
+      addStudentModal.classList.remove('active');
+      addStudentForm.reset();
+    });
+
+    addStudentModal.addEventListener('click', (e) => {
+      if (e.target === addStudentModal) {
+        addStudentModal.classList.remove('active');
+        addStudentForm.reset();
+      }
+    });
+
+    addStudentForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('studentName').value.trim();
+      const rollNumber = document.getElementById('studentRoll').value.trim();
+      const students = JSON.parse(localStorage.getItem('students') || '[]');
+      
+      if (students.find(s => s.class === selectedClass && s.rollNumber === rollNumber)) {
+        alert('Duplicate roll number in this class. Please use a unique roll number.');
+        return;
+      }
+
+      students.push({ id: Date.now(), name, rollNumber, class: selectedClass });
+      localStorage.setItem('students', JSON.stringify(students));
+      addStudentForm.reset();
+      addStudentModal.classList.remove('active');
+      loadStudents();
+    });
+
+    function loadStudents() {
+      if (!selectedClass) {
+        studentsTableContainer.innerHTML = '<div class="no-data">Please select a class to view students</div>';
+        return;
+      }
+      const students = JSON.parse(localStorage.getItem('students') || '[]');
+      renderStudents(students.filter(s => s.class === selectedClass));
+    }
+
+    function renderStudents(students) {
+      if (students.length === 0) {
+        studentsTableContainer.innerHTML = '<div class="no-data">No students found in this class</div>';
+        return;
+      }
+      let html = `<table><thead><tr><th>Roll Number</th><th>Name</th><th>Class</th></tr></thead><tbody>`;
+      students.forEach(s => {
+        html += `<tr><td>${s.rollNumber}</td><td>${s.name}</td><td>${s.class}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      studentsTableContainer.innerHTML = html;
+    }
+
+    function loadAttendance() {
+      if (!selectedClass) {
+        attendanceTableContainer.innerHTML = '<div class="no-data">Please select a class to mark attendance</div>';
+        return;
+      }
+      const date = attendanceDateInput.value;
+      const students = JSON.parse(localStorage.getItem('students') || '[]').filter(s => s.class === selectedClass);
+      
+      if (students.length === 0) {
+        attendanceTableContainer.innerHTML = '<div class="no-data">No students found in this class to mark attendance</div>';
+        return;
+      }
+
+      const allAttendance = JSON.parse(localStorage.getItem('attendance') || '[]');
+      const dateAttendance = allAttendance.find(a => a.date === date && a.class === selectedClass);
+      let html = `<table><thead><tr><th>Roll Number</th><th>Name</th><th>Attendance</th></tr></thead><tbody>`;
+
+      students.forEach(student => {
+        const record = dateAttendance?.records.find(r => r.studentId === student.id);
+        const isPresent = record ? record.present : false;
+        html += `
+          <tr>
+            <td>${student.rollNumber}</td>
+            <td>${student.name}</td>
+            <td>
+              <button class="present-btn ${isPresent ? 'active' : ''}" data-student-id="${student.id}">Present</button>
+              <button class="absent-btn ${!isPresent ? 'active' : ''}" data-student-id="${student.id}">Absent</button>
+            </td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      attendanceTableContainer.innerHTML = html;
+
+      attendanceTableContainer.querySelectorAll('.present-btn, .absent-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const studentId = parseInt(e.target.dataset.studentId);
+          const present = e.target.classList.contains('present-btn');
+          const allAttendance = JSON.parse(localStorage.getItem('attendance') || '[]');
+          let dateAttendance = allAttendance.find(a => a.date === date && a.class === selectedClass);
+          
+          if (!dateAttendance) {
+            dateAttendance = { date, class: selectedClass, records: [] };
+            allAttendance.push(dateAttendance);
+          }
+          const recordIdx = dateAttendance.records.findIndex(r => r.studentId === studentId);
+          if (recordIdx >= 0) dateAttendance.records[recordIdx].present = present;
+          else dateAttendance.records.push({ studentId, present });
+          
+          localStorage.setItem('attendance', JSON.stringify(allAttendance));
+          loadAttendance();
+        });
+      });
+    }
+
+    function loadResults() {
+      if (!selectedClass) {
+        resultsTableContainer.innerHTML = '<div class="no-data">Please select a class to view results</div>';
+        return;
+      }
+      const results = JSON.parse(localStorage.getItem('results') || '[]').filter(r => r.class === selectedClass);
+      const students = JSON.parse(localStorage.getItem('students') || '[]');
+      
+      if (results.length === 0) {
+        resultsTableContainer.innerHTML = '<div class="no-data">No results found for this class</div>';
+        return;
+      }
+
+      let html = `<table><thead><tr><th>Roll Number</th><th>Name</th><th>Subject</th><th>Marks</th><th>Grade</th></tr></thead><tbody>`;
+      results.forEach(result => {
+        const student = students.find(s => s.id === result.studentId);
+        const grade = result.marks >= 90 ? 'A+' : result.marks >= 80 ? 'A' : result.marks >= 70 ? 'B' : result.marks >= 60 ? 'C' : 'D';
+        html += `
+          <tr>
+            <td>${student?.rollNumber || 'N/A'}</td>
+            <td>${student?.name || 'Unknown'}</td>
+            <td>${result.subject}</td>
+            <td>${result.marks}</td>
+            <td>${grade}</td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      resultsTableContainer.innerHTML = html;
+    }
+
+    loadAttendanceBtn.addEventListener('click', () => selectedClass ? loadAttendance() : alert('Please select a class first'));
+    attendanceDateInput.addEventListener('change', () => selectedClass && loadAttendance());
+  </script>
+</body>
+</html>
