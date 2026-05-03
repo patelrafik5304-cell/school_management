@@ -148,7 +148,11 @@ function EntryPage() {
 
   const handleLogin = (role) => {
     localStorage.setItem('userRole', role)
-    navigate(role === 'admin' ? '/admin' : '/student')
+    if (role === 'admin') {
+      navigate('/admin')
+    } else {
+      navigate('/login')
+    }
   }
 
   return (
