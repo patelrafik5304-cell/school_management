@@ -755,12 +755,15 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
   const [students, setStudents] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [editingResult, setEditingResult] = useState(null)
+  const [expandedStudents, setExpandedStudents] = useState(new Set())
   const [formData, setFormData] = useState({
     studentId: '',
     examType: 'unit-test',
     subjects: [{ name: '', marks: '', maxMarks: 100 }]
   })
   const [loading, setLoading] = useState(true)
+  const [bulkUploadModal, setBulkUploadModal] = useState(false)
+  const [bulkData, setBulkData] = useState('')
 
   useEffect(() => {
     loadData()
@@ -770,13 +773,13 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
     try {
       setLoading(true)
       const { getAllResults, getAllStudents } = await getDbApi()
-      
+
       let studentsData = await getAllStudents()
       if (selectedClass) {
         studentsData = studentsData.filter(s => s.class === selectedClass)
       }
       setStudents(studentsData)
-      
+
       let resultsData = await getAllResults()
       if (selectedClass) {
         const classStudentIds = studentsData.map(s => s.id)
@@ -808,15 +811,56 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
     return 2.0
   }
 
+  const toggleStudentExpand = (studentId) => {
+    setExpandedStudents(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(studentId)) {
+        newSet.delete(studentId)
+      } else {
+        newSet.add(studentId)
+      }
+      return newSet
+    })
+  }
+
+  const expandAll = () => {
+    const ids = [...new Set(results.map(r => r.studentId))]
+    setExpandedStudents(new Set(ids))
+  }
+
+  const collapseAll = () => {
+    setExpandedStudents(new Set())
+  }
+
+  const groupByStudent = () => {
+    const grouped = {}
+    results.forEach(result => {
+      const student = students.find(s => s.id === result.studentId)
+      if (!student) return
+      if (!grouped[result.studentId]) {
+        grouped[result.studentId] = { student, results: [], totalMarks: 0, totalMaxMarks: 0 }
+      }
+      grouped[result.studentId].results.push(result)
+      grouped[result.studentId].totalMarks += result.subjects.reduce((s, sub) => s + parseFloat(sub.marks || 0), 0)
+      grouped[result.studentId].totalMaxMarks += result.subjects.reduce((s, sub) => s + parseFloat(sub.maxMarks || 0), 0)
+    })
+    Object.values(grouped).forEach(g => {
+      g.overallPercentage = g.totalMaxMarks > 0 ? (g.totalMarks / g.totalMaxMarks) * 100 : 0
+      g.finalGPA = calculateGPA(g.overallPercentage)
+      g.finalGrade = calculateGrade(g.overallPercentage)
+    })
+    return grouped
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
       const { addResult, updateResult } = await getDbApi()
-      
+
       const totalMarks = formData.subjects.reduce((sum, sub) => sum + parseFloat(sub.marks || 0), 0)
       const totalMaxMarks = formData.subjects.reduce((sum, sub) => sum + parseFloat(sub.maxMarks || 0), 0)
       const percentage = totalMaxMarks > 0 ? (totalMarks / totalMaxMarks) * 100 : 0
-      
+
       const resultData = {
         ...formData,
         percentage: parseFloat(percentage.toFixed(2)),
@@ -824,13 +868,13 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
         gpa: calculateGPA(percentage),
         status: 'published'
       }
-      
+
       if (editingResult) {
         await updateResult(editingResult.id, resultData)
       } else {
         await addResult(resultData)
       }
-      
+
       setShowModal(false)
       setEditingResult(null)
       setFormData({
@@ -842,6 +886,95 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
     } catch (error) {
       console.error('Failed to save result:', error)
       alert('Failed to save result.')
+    }
+  }
+
+  const handleDeleteResult = async (id) => {
+    if (!confirm('Delete this result?')) return
+    try {
+      const { deleteResult } = await getDbApi()
+      await deleteResult(id)
+      loadData()
+    } catch (error) {
+      alert('Failed to delete result.')
+    }
+  }
+
+  const handleDeleteSubject = async (resultId, subjectIndex) => {
+    if (!confirm('Delete this subject?')) return
+    try {
+      const result = results.find(r => r.id === resultId)
+      if (!result) return
+      const updatedSubjects = result.subjects.filter((_, i) => i !== subjectIndex)
+      if (updatedSubjects.length === 0) {
+        await handleDeleteResult(resultId)
+        return
+      }
+      const { updateResult } = await getDbApi()
+      const totalMarks = updatedSubjects.reduce((s, sub) => s + parseFloat(sub.marks || 0), 0)
+      const totalMaxMarks = updatedSubjects.reduce((s, sub) => s + parseFloat(sub.maxMarks || 0), 0)
+      const percentage = totalMaxMarks > 0 ? (totalMarks / totalMaxMarks) * 100 : 0
+      await updateResult(resultId, {
+        ...result,
+        subjects: updatedSubjects,
+        percentage: parseFloat(percentage.toFixed(2)),
+        grade: calculateGrade(percentage),
+        gpa: calculateGPA(percentage)
+      })
+      loadData()
+    } catch (error) {
+      alert('Failed to delete subject.')
+    }
+  }
+
+  const publishAll = async () => {
+    if (!confirm('Publish all results?')) return
+    try {
+      const { updateResult } = await getDbApi()
+      const updates = results.filter(r => r.status !== 'published').map(r =>
+        updateResult(r.id, { ...r, status: 'published' })
+      )
+      await Promise.all(updates)
+      loadData()
+    } catch (error) {
+      alert('Failed to publish results.')
+    }
+  }
+
+  const handleBulkUpload = async () => {
+    try {
+      const { addResult } = await getDbApi()
+      const data = JSON.parse(bulkData)
+      for (const item of data) {
+        const student = students.find(s =>
+          s.rollNumber.toString() === item.studentRoll?.toString() &&
+          s.class === item.className
+        )
+        if (!student) continue
+        const subjects = item.subjects.map(sub => ({
+          name: sub.subject,
+          marks: parseFloat(sub.marks),
+          maxMarks: sub.maxMarks || 100
+        }))
+        const totalMarks = subjects.reduce((s, sub) => s + sub.marks, 0)
+        const totalMaxMarks = subjects.reduce((s, sub) => s + sub.maxMarks, 0)
+        const percentage = totalMaxMarks > 0 ? (totalMarks / totalMaxMarks) * 100 : 0
+        await addResult({
+          studentId: student.id,
+          examType: item.exam?.toLowerCase().replace(' ', '-') || 'unit-test',
+          subjects,
+          percentage: parseFloat(percentage.toFixed(2)),
+          grade: calculateGrade(percentage),
+          gpa: calculateGPA(percentage),
+          status: 'published'
+        })
+      }
+      setBulkUploadModal(false)
+      setBulkData('')
+      loadData()
+      alert('Bulk upload completed!')
+    } catch (error) {
+      alert('Invalid JSON format. Please check the data.')
     }
   }
 
@@ -863,6 +996,8 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
     setFormData({ ...formData, subjects: updatedSubjects })
   }
 
+  const grouped = groupByStudent()
+
   return (
     <div className="app">
       <AppNavbar variant="admin" />
@@ -872,18 +1007,17 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
             <h2>Results Management</h2>
             <div className="page-actions">
               <ClassSelector selectedClass={selectedClass} setSelectedClass={setSelectedClass} />
-              <button 
+              <button className="btn btn-secondary" onClick={() => setBulkUploadModal(true)}>
+                Bulk Upload
+              </button>
+              <button
                 className="btn btn-primary"
                 onClick={() => {
                   if (!selectedClass) {
                     alert('Please select a class before adding results')
                     return
                   }
-                  setFormData({
-                    studentId: '',
-                    examType: 'unit-test',
-                    subjects: [{ name: '', marks: '', maxMarks: 100 }]
-                  })
+                  setFormData({ studentId: '', examType: 'unit-test', subjects: [{ name: '', marks: '', maxMarks: 100 }] })
                   setEditingResult(null)
                   setShowModal(true)
                 }}
@@ -897,72 +1031,90 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
             <div className="no-class-message">Please select a class to view results</div>
           ) : (
             <>
+              <div className="results-toolbar">
+                <button className="btn btn-sm btn-secondary" onClick={expandAll}>Expand All</button>
+                <button className="btn btn-sm btn-secondary" onClick={collapseAll}>Collapse All</button>
+                <button className="btn btn-sm btn-primary" onClick={publishAll}>Publish All Results</button>
+              </div>
+
               {loading ? (
                 <div className="loading">Loading results...</div>
               ) : (
-                <div className="table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Student</th>
-                        <th>Class</th>
-                        <th>Exam Type</th>
-                        <th>Percentage</th>
-                        <th>Grade</th>
-                        <th>GPA</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {results.length === 0 ? (
-                        <tr>
-                          <td colSpan="8" className="no-data">
-                            No results found for {selectedClass}
-                          </td>
-                        </tr>
-                      ) : (
-                        results.map(result => {
-                          const student = students.find(s => s.id === result.studentId)
-                          return (
-                            <tr key={result.id}>
-                              <td>{student?.name || 'Unknown'}</td>
-                              <td>{student?.class || 'N/A'}</td>
-                              <td>{result.examType}</td>
-                              <td>{result.percentage}%</td>
-                              <td>
-                                <span className={`grade-badge ${result.grade}`}>
-                                  {result.grade}
-                                </span>
-                              </td>
-                              <td>{result.gpa}</td>
-                              <td>
-                                <span className={`status-badge ${result.status}`}>
-                                  {result.status}
-                                </span>
-                              </td>
-                              <td>
-                                <button 
-                                  className="btn btn-sm btn-secondary"
-                                  onClick={() => {
+                <div className="student-cards-container">
+                  {Object.keys(grouped).length === 0 ? (
+                    <div className="no-data">No results found for {selectedClass}</div>
+                  ) : (
+                    Object.values(grouped).map(group => (
+                      <div key={group.student.id} className="student-card">
+                        <div className="student-card-header" onClick={() => toggleStudentExpand(group.student.id)}>
+                          <div className="student-info">
+                            <span className="expand-icon">{expandedStudents.has(group.student.id) ? '▼' : '▶'}</span>
+                            <span className="student-name">{group.student.name}</span>
+                            <span className="student-class-badge">{group.student.class}</span>
+                            <span className="student-roll">Roll: {group.student.rollNumber}</span>
+                          </div>
+                          <div className="student-summary">
+                            <span className="summary-badge">Total: {group.totalMarks}/{group.totalMaxMarks}</span>
+                            <span className="summary-badge">{group.overallPercentage.toFixed(2)}%</span>
+                            <span className={`grade-badge ${group.finalGrade}`}>{group.finalGrade}</span>
+                            <span className="gpa-badge">GPA: {group.finalGPA}</span>
+                          </div>
+                        </div>
+
+                        {expandedStudents.has(group.student.id) && (
+                          <div className="student-card-body">
+                            {group.results.map(result => (
+                              <div key={result.id} className="exam-block">
+                                <div className="exam-header">
+                                  <h4>{result.examType.replace('-', ' ').toUpperCase()}</h4>
+                                  <span className={`status-badge ${result.status}`}>{result.status}</span>
+                                  <button className="btn btn-sm btn-secondary" onClick={() => {
                                     setEditingResult(result)
-                                    setFormData({
-                                      studentId: result.studentId,
-                                      examType: result.examType,
-                                      subjects: result.subjects
-                                    })
+                                    setFormData({ studentId: result.studentId, examType: result.examType, subjects: result.subjects })
                                     setShowModal(true)
-                                  }}
-                                >
-                                  Edit
-                                </button>
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )}
-                    </tbody>
-                  </table>
+                                  }}>Edit</button>
+                                  <button className="btn btn-sm btn-danger" onClick={() => handleDeleteResult(result.id)}>Delete</button>
+                                </div>
+                                <table className="subjects-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Subject</th>
+                                      <th>Marks</th>
+                                      <th>Max</th>
+                                      <th>%</th>
+                                      <th>Grade</th>
+                                      <th>Action</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {result.subjects.map((sub, idx) => {
+                                      const pct = sub.maxMarks > 0 ? (sub.marks / sub.maxMarks) * 100 : 0
+                                      const gr = calculateGrade(pct)
+                                      return (
+                                        <tr key={idx}>
+                                          <td>{sub.name}</td>
+                                          <td>{sub.marks}</td>
+                                          <td>{sub.maxMarks}</td>
+                                          <td>{pct.toFixed(1)}%</td>
+                                          <td><span className={`grade-badge ${gr}`}>{gr}</span></td>
+                                          <td><button className="btn btn-sm btn-danger" onClick={() => handleDeleteSubject(result.id, idx)}>Delete</button></td>
+                                        </tr>
+                                      )
+                                    })}
+                                  </tbody>
+                                </table>
+                                <div className="exam-footer">
+                                  <span>Exam %: {result.percentage}%</span>
+                                  <span>Grade: <span className={`grade-badge ${result.grade}`}>{result.grade}</span></span>
+                                  <span>GPA: {result.gpa}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </>
@@ -970,7 +1122,7 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
 
           {showModal && (
             <div className="modal-overlay" onClick={() => setShowModal(false)}>
-              <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                   <h3>{editingResult ? 'Edit Result' : 'Add New Result'}</h3>
                   <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
@@ -978,25 +1130,14 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
                 <form onSubmit={handleSubmit} className="modal-body">
                   <div className="form-group">
                     <label>Student</label>
-                    <select
-                      value={formData.studentId}
-                      onChange={(e) => setFormData({...formData, studentId: e.target.value})}
-                      required
-                    >
+                    <select value={formData.studentId} onChange={e => setFormData({...formData, studentId: e.target.value })} required disabled={!!editingResult}>
                       <option value="">Select Student</option>
-                      {students.map(student => (
-                        <option key={student.id} value={student.id}>
-                          {student.name} ({student.rollNumber})
-                        </option>
-                      ))}
+                      {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.rollNumber})</option>)}
                     </select>
                   </div>
                   <div className="form-group">
                     <label>Exam Type</label>
-                    <select
-                      value={formData.examType}
-                      onChange={(e) => setFormData({...formData, examType: e.target.value})}
-                    >
+                    <select value={formData.examType} onChange={e => setFormData({...formData, examType: e.target.value })}>
                       <option value="unit-test">Unit Test</option>
                       <option value="mid-term">Mid Term</option>
                       <option value="final">Final Exam</option>
@@ -1004,57 +1145,53 @@ function ResultsManagement({ selectedClass, setSelectedClass }) {
                   </div>
                   <div className="subjects-section">
                     <h4>Subjects</h4>
-                    {formData.subjects.map((subject, index) => (
-                      <div key={index} className="subject-row">
-                        <input
-                          type="text"
-                          placeholder="Subject Name"
-                          value={subject.name}
-                          onChange={(e) => updateSubject(index, 'name', e.target.value)}
-                          required
-                        />
-                        <input
-                          type="number"
-                          placeholder="Marks"
-                          value={subject.marks}
-                          onChange={(e) => updateSubject(index, 'marks', e.target.value)}
-                          required
-                        />
-                        <input
-                          type="number"
-                          placeholder="Max Marks"
-                          value={subject.maxMarks}
-                          onChange={(e) => updateSubject(index, 'maxMarks', e.target.value)}
-                          required
-                        />
-                        {formData.subjects.length > 1 && (
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-danger"
-                            onClick={() => removeSubject(index)}
-                          >
-                            Remove
-                          </button>
-                        )}
+                    {formData.subjects.map((sub, idx) => (
+                      <div key={idx} className="subject-row">
+                        <input type="text" placeholder="Subject" value={sub.name} onChange={e => updateSubject(idx, 'name', e.target.value)} required />
+                        <input type="number" placeholder="Marks" value={sub.marks} onChange={e => updateSubject(idx, 'marks', e.target.value)} required />
+                        <input type="number" placeholder="Max" value={sub.maxMarks} onChange={e => updateSubject(idx, 'maxMarks', e.target.value)} required />
+                        {formData.subjects.length > 1 && <button type="button" className="btn btn-sm btn-danger" onClick={() => removeSubject(idx)}>Remove</button>}
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-secondary"
-                      onClick={addSubject}
-                    >
-                      + Add Subject
-                    </button>
+                    <button type="button" className="btn btn-sm btn-secondary" onClick={addSubject}>+ Add Subject</button>
                   </div>
                   <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                      {editingResult ? 'Update' : 'Add'} Result
-                    </button>
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary">{editingResult ? 'Update' : 'Add'} Result</button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {bulkUploadModal && (
+            <div className="modal-overlay" onClick={() => setBulkUploadModal(false)}>
+              <div className="modal wide-modal" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h3>Bulk Upload Results</h3>
+                  <button className="modal-close" onClick={() => setBulkUploadModal(false)}>×</button>
+                </div>
+                <div className="modal-body">
+                  <p>JSON format (grouped by student):</p>
+                  <pre className="format-example">
+{`[
+  {
+    "studentRoll": "1",
+    "className": "Class 5",
+    "exam": "Final Exam",
+    "subjects": [
+      {"subject": "Maths", "marks": 85, "maxMarks": 100},
+      {"subject": "English", "marks": 90, "maxMarks": 100}
+    ]
+  }
+]`}
+                  </pre>
+                  <textarea className="bulk-textarea" value={bulkData} onChange={e => setBulkData(e.target.value)} rows="10" placeholder="Paste JSON here..." />
+                  <div className="modal-footer">
+                    <button className="btn btn-secondary" onClick={() => setBulkUploadModal(false)}>Cancel</button>
+                    <button className="btn btn-primary" onClick={handleBulkUpload}>Upload</button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1136,13 +1273,157 @@ function MyAttendance() {
 }
 
 function MyResults() {
+  const [results, setResults] = useState([])
+  const [student, setStudent] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const studentId = localStorage.getItem('studentId')
+      if (!studentId) return
+      const { getStudentById, getResultsByStudent } = await getDbApi()
+      const [studentData, resultsData] = await Promise.all([
+        getStudentById(studentId),
+        getResultsByStudent(studentId)
+      ])
+      setStudent(studentData)
+      setResults(resultsData)
+    } catch (error) {
+      console.error('Failed to load results:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const calculateGrade = (percentage) => {
+    if (percentage >= 90) return 'A+'
+    if (percentage >= 80) return 'A'
+    if (percentage >= 70) return 'B+'
+    if (percentage >= 60) return 'B'
+    if (percentage >= 50) return 'C'
+    return 'D'
+  }
+
+  const calculateGPA = (percentage) => {
+    if (percentage >= 90) return 4.0
+    if (percentage >= 80) return 3.7
+    if (percentage >= 70) return 3.3
+    if (percentage >= 60) return 3.0
+    if (percentage >= 50) return 2.7
+    return 2.0
+  }
+
+  const getOverallSummary = () => {
+    let totalMarks = 0
+    let totalMaxMarks = 0
+    results.forEach(r => {
+      totalMarks += r.subjects.reduce((s, sub) => s + parseFloat(sub.marks || 0), 0)
+      totalMaxMarks += r.subjects.reduce((s, sub) => s + parseFloat(sub.maxMarks || 0), 0)
+    })
+    const overallPercentage = totalMaxMarks > 0 ? (totalMarks / totalMaxMarks) * 100 : 0
+    return {
+      totalMarks,
+      totalMaxMarks,
+      overallPercentage,
+      finalGPA: calculateGPA(overallPercentage),
+      finalGrade: calculateGrade(overallPercentage)
+    }
+  }
+
+  if (loading) return <div className="loading">Loading results...</div>
+
+  const summary = getOverallSummary()
+
   return (
     <div className="app">
       <AppNavbar variant="student" />
       <main className="main-content">
         <div className="student-page">
           <h2>My Results</h2>
-          <p>Results details here.</p>
+          {student && results.length > 0 ? (
+            <div className="marksheet-container">
+              <div className="marksheet-header">
+                <div className="school-name">PRATHMIK KUMARSHALA DEVLA</div>
+                <div className="marksheet-title">STUDENT MARKSHEET</div>
+                <div className="marksheet-subtitle">Academic Performance Report</div>
+              </div>
+              <div className="marksheet-student-info">
+                <div className="info-item">
+                  <span className="info-label">Student Name</span>
+                  <span className="info-value">{student.name}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Class</span>
+                  <span className="info-value">{student.class}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Roll Number</span>
+                  <span className="info-value">{student.rollNumber}</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Date</span>
+                  <span className="info-value">{new Date().toLocaleDateString()}</span>
+                </div>
+              </div>
+              <div className="marksheet-table-container">
+                <table className="marksheet-table">
+                  <thead>
+                    <tr>
+                      <th>Exam Type</th>
+                      <th>Subject</th>
+                      <th>Marks</th>
+                      <th>Max Marks</th>
+                      <th>Percentage</th>
+                      <th>Grade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map(result => result.subjects.map((sub, idx) => {
+                      const pct = sub.maxMarks > 0 ? (sub.marks / sub.maxMarks) * 100 : 0
+                      return (
+                        <tr key={`${result.id}-${idx}`}>
+                          {idx === 0 && <td rowSpan={result.subjects.length}>{result.examType.replace('-', ' ').toUpperCase()}</td>}
+                          <td>{sub.name}</td>
+                          <td>{sub.marks}</td>
+                          <td>{sub.maxMarks}</td>
+                          <td>{pct.toFixed(1)}%</td>
+                          <td><span className={`grade-badge ${calculateGrade(pct)}`}>{calculateGrade(pct)}</span></td>
+                        </tr>
+                      )
+                    }))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="marksheet-summary">
+                <div className="summary-card">
+                  <div className="summary-card-value">{summary.totalMarks}/{summary.totalMaxMarks}</div>
+                  <div className="summary-card-label">Total Marks</div>
+                </div>
+                <div className="summary-card">
+                  <div className="summary-card-value">{summary.overallPercentage.toFixed(2)}%</div>
+                  <div className="summary-card-label">Overall Percentage</div>
+                </div>
+                <div className="summary-card">
+                  <div className="summary-card-value">{summary.finalGPA}</div>
+                  <div className="summary-card-label">Final GPA</div>
+                </div>
+                <div className="summary-card">
+                  <div className="summary-card-value"><span className={`grade-badge ${summary.finalGrade}`}>{summary.finalGrade}</span></div>
+                  <div className="summary-card-label">Final Grade</div>
+                </div>
+              </div>
+              <div className="marksheet-footer">
+                This is a computer-generated marksheet. No signature required.
+              </div>
+            </div>
+          ) : (
+            <div className="no-data">No results found.</div>
+          )}
         </div>
       </main>
     </div>

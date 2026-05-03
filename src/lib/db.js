@@ -169,6 +169,35 @@ export async function getResultsByStudent(studentId) {
     });
 }
 
+export async function getStudentsWithResults(selectedClass = null) {
+  const { query, orderBy, where, getDocs } = await import("firebase/firestore");
+  
+  let studentsData = await getAllStudents();
+  if (selectedClass) {
+    studentsData = studentsData.filter(s => s.class === selectedClass);
+  }
+  
+  const studentIds = studentsData.map(s => s.id);
+  const ref = await getResultsRef();
+  let q = ref;
+  if (selectedClass) {
+    q = query(ref, where('studentId', 'in', studentIds));
+  }
+  const snapshot = await getDocs(selectedClass ? q : query(ref, orderBy('createdAt', 'desc')));
+  
+  const results = snapshot.docs.map(d => ({ id: d.id, _id: d.id, ...d.data() }));
+  
+  const grouped = {};
+  studentsData.forEach(student => {
+    grouped[student.id] = {
+      student,
+      results: results.filter(r => r.studentId === student.id)
+    };
+  });
+  
+  return grouped;
+}
+
 export async function getPublishedResultsByStudent(studentId) {
   const results = await getResultsByStudent(studentId);
   return results.filter(result => result.status === 'published');
