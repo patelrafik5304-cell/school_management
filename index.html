@@ -60,39 +60,31 @@
     .present-btn.active { background: #10b981; color: white; }
     .absent-btn.active { background: #ef4444; color: white; }
     
-    .accordion { display: flex; flex-direction: column; gap: 12px; }
-    .accordion-item { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: white; }
-    .accordion-header { padding: 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; flex-wrap: wrap; gap: 12px; }
-    .accordion-header:hover { background: #f1f5f9; }
-    .student-info { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-    .student-name { font-weight: 600; color: #1e293b; }
-    .student-roll, .student-class { font-size: 14px; color: #64748b; }
-    .student-summary { display: flex; gap: 16px; align-items: center; font-size: 14px; flex-wrap: wrap; }
-    .total-marks, .percentage, .gpa { color: #475569; }
-    .final-grade { font-weight: 500; }
+    /* Final Result Table Styles */
+    .final-result-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .final-result-table th, .final-result-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    .final-result-table th { background: #f8fafc; font-weight: 500; color: #64748b; font-size: 14px; }
+    .final-result-table tr:hover { background: #f8fafc; }
+    
+    .view-details-btn { padding: 6px 12px; border-radius: 6px; font-size: 12px; border: none; background: #3b82f6; color: white; cursor: pointer; transition: background 0.2s ease; }
+    .view-details-btn:hover { background: #2563eb; }
+    
+    /* Subject Details Modal */
+    .subject-details-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .subject-details-table th, .subject-details-table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
+    .subject-details-table th { background: #f8fafc; font-weight: 500; color: #64748b; }
+    
     .grade-a-plus { color: #059669; }
     .grade-a { color: #10b981; }
-    .grade-b { color: #f59e0b; }
-    .grade-c { color: #f97316; }
-    .grade-d { color: #ef4444; }
-    .published-badge { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-    .accordion-chevron { transition: transform 0.2s ease; font-size: 12px; }
-    .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-    .accordion-item.active .accordion-content { max-height: 1000px; padding: 16px; }
-    .accordion-content table { margin-top: 0; }
-    
-    .marksheet { padding: 16px; }
-    .marksheet h3 { margin-bottom: 12px; color: #1e293b; }
-    .marksheet p { margin-bottom: 8px; color: #475569; }
-    .marksheet table { margin: 16px 0; }
-    .marksheet tfoot td { font-weight: 600; border-top: 2px solid #e2e8f0; }
+    .grade-b-plus { color: #f59e0b; }
+    .grade-b { color: #f97316; }
+    .grade-c { color: #ef4444; }
     
     @media (max-width: 768px) {
       .top-bar { flex-direction: column; align-items: flex-start; }
       .class-select-btn, .add-student-btn { width: 100%; }
       th, td { padding: 8px 12px; font-size: 14px; }
-      .accordion-header { flex-direction: column; align-items: flex-start; }
-      .student-summary { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .final-result-table { display: block; overflow-x: auto; }
     }
   </style>
 </head>
@@ -132,7 +124,7 @@
   </section>
 
   <section class="dashboard-section">
-    <h2>Results Dashboard 
+    <h2>Final Results Dashboard 
       <button id="addResultBtn" class="btn" style="background: #8b5cf6; color: white; margin-left: 16px; padding: 8px 12px; font-size: 12px;">+ Add Result</button> 
       <button id="bulkUploadBtn" class="btn" style="background: #f59e0b; color: white; padding: 8px 12px; font-size: 12px;">Bulk Upload</button>
     </h2>
@@ -171,6 +163,9 @@
           </select>
         </div>
         <div class="form-group">
+          <input type="text" id="resultExam" placeholder="Exam Name (e.g. Final Exam)" required>
+        </div>
+        <div class="form-group">
           <input type="text" id="resultSubject" placeholder="Subject (e.g. Maths, Science)" required>
         </div>
         <div class="form-group">
@@ -189,6 +184,9 @@
       <form id="editResultForm">
         <input type="hidden" id="editResultId">
         <div class="form-group">
+          <input type="text" id="editExam" placeholder="Exam Name" required>
+        </div>
+        <div class="form-group">
           <input type="text" id="editSubject" placeholder="Subject" required>
         </div>
         <div class="form-group">
@@ -204,17 +202,17 @@
     <div class="modal-content wide">
       <span class="close-modal" id="closeBulkUploadModal">&times;</span>
       <h3>Bulk Upload Results</h3>
-      <p style="margin-bottom: 12px; color: #64748b; font-size: 14px;">Paste grouped JSON (format: [{"studentRoll": "1", "className": "Class 5", "subjects": [{"subject": "Maths", "marks": 90}]}])</p>
+      <p style="margin-bottom: 12px; color: #64748b; font-size: 14px;">Paste grouped JSON (format: [{"studentRoll": "1", "className": "Class 5", "exam": "Final Exam", "subjects": [{"subject": "Maths", "marks": 90}]}])</p>
       <textarea id="bulkUploadData" rows="10" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: monospace; margin-bottom: 16px;"></textarea>
       <button id="processBulkUpload" class="btn add-student-btn" style="width: 100%;">Process Upload</button>
     </div>
   </div>
 
-  <!-- Marksheet Modal -->
-  <div id="marksheetModal" class="modal">
+  <!-- Subject Details Modal -->
+  <div id="subjectDetailsModal" class="modal">
     <div class="modal-content wide">
-      <span class="close-modal" id="closeMarksheetModal">&times;</span>
-      <div id="marksheetContent"></div>
+      <span class="close-modal" id="closeSubjectDetailsModal">&times;</span>
+      <div id="subjectDetailsContent"></div>
     </div>
   </div>
 
@@ -393,224 +391,168 @@
       });
     }
 
+    // Results Functions
+    function groupResultsByStudent() {
+      const results = JSON.parse(localStorage.getItem('results') || '[]').filter(r => r.class === selectedClass);
+      const students = JSON.parse(localStorage.getItem('students') || '[]');
+      
+      const grouped = {};
+      
+      results.forEach(r => {
+        const exam = r.exam || "Final Exam";
+        const key = `${r.studentId}-${r.class}-${exam}`;
+        
+        if (!grouped[key]) {
+          const student = students.find(s => s.id === r.studentId);
+          if (!student) return;
+          grouped[key] = {
+            studentId: r.studentId,
+            studentName: student.name,
+            rollNumber: student.rollNumber,
+            class: r.class,
+            exam: exam,
+            subjects: [],
+            totalMarks: 0,
+            totalMaxMarks: 0,
+            totalSubjects: 0
+          };
+        }
+        
+        const subjectGPA = r.marks >= 90 ? 4.0 : r.marks >= 80 ? 3.7 : r.marks >= 70 ? 3.0 : r.marks >= 60 ? 2.0 : 1.0;
+        grouped[key].subjects.push({
+          subject: r.subject,
+          marks: r.marks,
+          grade: r.marks >= 90 ? 'A+' : r.marks >= 80 ? 'A' : r.marks >= 70 ? 'B+' : r.marks >= 60 ? 'B' : 'C',
+          gpa: subjectGPA
+        });
+        
+        grouped[key].totalMarks += r.marks;
+        grouped[key].totalMaxMarks += 100;
+        grouped[key].totalSubjects += 1;
+      });
+      
+      return Object.values(grouped).map(group => {
+        const percentage = group.totalMaxMarks > 0 ? (group.totalMarks / group.totalMaxMarks) * 100 : 0;
+        const averageGPA = group.totalSubjects > 0 ? group.subjects.reduce((sum, sub) => sum + sub.gpa, 0) / group.totalSubjects : 0;
+        const finalGrade = percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B+' : percentage >= 60 ? 'B' : 'C';
+        
+        return {
+          ...group,
+          percentage: percentage.toFixed(2),
+          averageGPA: averageGPA.toFixed(2),
+          finalGrade
+        };
+      });
+    }
+
+    function renderFinalResults(groupedResults) {
+      if (groupedResults.length === 0) {
+        resultsTableContainer.innerHTML = '<div class="no-data">No results found for this class</div>';
+        return;
+      }
+      
+      let html = `
+        <table class="final-result-table">
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Class</th>
+              <th>Exam</th>
+              <th>Total Marks</th>
+              <th>Percentage</th>
+              <th>Final Grade</th>
+              <th>GPA</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${groupedResults.map(group => `
+              <tr>
+                <td>${group.studentName} (Roll: ${group.rollNumber})</td>
+                <td>${group.class}</td>
+                <td>${group.exam}</td>
+                <td>${group.totalMarks}/${group.totalMaxMarks}</td>
+                <td>${group.percentage}%</td>
+                <td class="grade-${group.finalGrade.toLowerCase().replace('+', '-plus')}">${group.finalGrade}</td>
+                <td>${group.averageGPA}</td>
+                <td>
+                  <button class="view-details-btn" data-student-id="${group.studentId}" data-exam="${group.exam}">View Details</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      
+      resultsTableContainer.innerHTML = html;
+      
+      // Add event listeners to View Details buttons
+      document.querySelectorAll('.view-details-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const studentId = parseInt(btn.dataset.studentId);
+          const exam = btn.dataset.exam;
+          showSubjectDetails(studentId, exam);
+        });
+      });
+    }
+
+    function showSubjectDetails(studentId, exam) {
+      const students = JSON.parse(localStorage.getItem('students') || '[]');
+      const student = students.find(s => s.id === studentId);
+      const results = JSON.parse(localStorage.getItem('results') || '[]').filter(r => 
+        r.studentId === studentId && 
+        r.class === selectedClass && 
+        (r.exam || "Final Exam") === exam
+      );
+      
+      if (!student || results.length === 0) return;
+      
+      let html = `
+        <div class="marksheet">
+          <h3>${student.name} - ${exam} Subject Details</h3>
+          <p>Roll Number: ${student.rollNumber}</p>
+          <p>Class: ${selectedClass}</p>
+          <p>Exam: ${exam}</p>
+          <table class="subject-details-table">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Marks</th>
+                <th>Max Marks</th>
+                <th>Grade</th>
+                <th>GPA</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${results.map(r => {
+                const grade = r.marks >= 90 ? 'A+' : r.marks >= 80 ? 'A' : r.marks >= 70 ? 'B+' : r.marks >= 60 ? 'B' : 'C';
+                const gpa = r.marks >= 90 ? 4.0 : r.marks >= 80 ? 3.7 : r.marks >= 70 ? 3.0 : r.marks >= 60 ? 2.0 : 1.0;
+                return `
+                  <tr>
+                    <td>${r.subject}</td>
+                    <td>${r.marks}</td>
+                    <td>100</td>
+                    <td class="grade-${grade.toLowerCase().replace('+', '-plus')}">${grade}</td>
+                    <td>${gpa.toFixed(1)}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      
+      document.getElementById('subjectDetailsContent').innerHTML = html;
+      document.getElementById('subjectDetailsModal').classList.add('active');
+    }
+
     function loadResults() {
       if (!selectedClass) {
         resultsTableContainer.innerHTML = '<div class="no-data">Please select a class to view results</div>';
         return;
       }
-      const results = JSON.parse(localStorage.getItem('results') || '[]').filter(r => r.class === selectedClass);
-      const students = JSON.parse(localStorage.getItem('students') || '[]');
-      
-      // Group results by studentId
-      const grouped = {};
-      results.forEach(r => {
-        if (!grouped[r.studentId]) {
-          const student = students.find(s => s.id === r.studentId);
-          if (!student) return;
-          grouped[r.studentId] = {
-            student,
-            subjects: [],
-            total: 0,
-            count: 0
-          };
-        }
-        grouped[r.studentId].subjects.push(r);
-        grouped[r.studentId].total += r.marks;
-        grouped[r.studentId].count++;
-      });
-
-      const groupedResults = Object.values(grouped).map(group => {
-        const percentage = group.count > 0 ? (group.total / (group.count * 100)) * 100 : 0;
-        const gpa = percentage >= 90 ? 4.0 : percentage >= 80 ? 3.7 : percentage >= 70 ? 3.0 : percentage >= 60 ? 2.0 : 1.0;
-        const finalGrade = percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B' : percentage >= 60 ? 'C' : 'D';
-        return {
-          ...group,
-          percentage: percentage.toFixed(2),
-          gpa: gpa.toFixed(1),
-          finalGrade
-        };
-      });
-
-      if (groupedResults.length === 0) {
-        resultsTableContainer.innerHTML = '<div class="no-data">No results found for this class</div>';
-        return;
-      }
-
-      renderResults(groupedResults);
-    }
-
-    function renderResults(groupedResults) {
-      let html = '<div class="accordion">';
-      groupedResults.forEach(group => {
-        const { student, subjects, total, percentage, gpa, finalGrade } = group;
-        const publishedCount = subjects.filter(s => s.published).length;
-        const allPublished = publishedCount === subjects.length;
-        
-        html += `
-          <div class="accordion-item" data-student-id="${student.id}">
-            <div class="accordion-header">
-              <div class="student-info">
-                <span class="student-name">${student.name}</span>
-                <span class="student-roll">Roll: ${student.rollNumber}</span>
-                <span class="student-class">${student.class}</span>
-              </div>
-              <div class="student-summary">
-                <span class="total-marks">Total: ${total}</span>
-                <span class="percentage">${percentage}%</span>
-                <span class="gpa">GPA: ${gpa}</span>
-                <span class="final-grade grade-${finalGrade.toLowerCase().replace('+', '-plus')}">${finalGrade}</span>
-                ${allPublished ? '<span class="published-badge">Published</span>' : ''}
-                <button class="publish-btn btn" data-student-id="${student.id}" style="padding: 4px 8px; font-size: 12px; background: #10b981; color: white;">Publish All</button>
-                <button class="view-marksheet-btn btn" data-student-id="${student.id}" style="padding: 4px 8px; font-size: 12px; background: #3b82f6; color: white;">View Marksheet</button>
-                <span class="accordion-chevron">▼</span>
-              </div>
-            </div>
-            <div class="accordion-content">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Subject</th>
-                    <th>Marks</th>
-                    <th>Grade</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${subjects.map(subject => {
-                    const subjectGrade = subject.marks >= 90 ? 'A+' : subject.marks >= 80 ? 'A' : subject.marks >= 70 ? 'B' : subject.marks >= 60 ? 'C' : 'D';
-                    return `
-                      <tr>
-                        <td>${subject.subject}</td>
-                        <td>${subject.marks}</td>
-                        <td class="grade-${subjectGrade.toLowerCase().replace('+', '-plus')}">${subjectGrade}</td>
-                        <td>${subject.published ? 'Published' : 'Draft'}</td>
-                        <td>
-                          <button class="edit-subject-btn btn" data-result-id="${subject.id}" style="padding: 4px 8px; font-size: 12px; background: #f59e0b; color: white; margin-right: 8px;">Edit</button>
-                          <button class="delete-subject-btn btn" data-result-id="${subject.id}" style="padding: 4px 8px; font-size: 12px; background: #ef4444; color: white;">Delete</button>
-                        </td>
-                      </tr>
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        `;
-      });
-      html += '</div>';
-      resultsTableContainer.innerHTML = html;
-
-      // Accordion toggle
-      document.querySelectorAll('.accordion-header').forEach(header => {
-        header.addEventListener('click', (e) => {
-          if (e.target.tagName === 'BUTTON') return;
-          const item = header.parentElement;
-          item.classList.toggle('active');
-          const chevron = header.querySelector('.accordion-chevron');
-          chevron.style.transform = item.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0)';
-        });
-      });
-
-      // Edit subject
-      document.querySelectorAll('.edit-subject-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const resultId = parseInt(btn.dataset.resultId);
-          openEditResultModal(resultId);
-        });
-      });
-
-      // Delete subject
-      document.querySelectorAll('.delete-subject-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const resultId = parseInt(btn.dataset.resultId);
-          if (confirm('Delete this subject result?')) {
-            deleteResult(resultId);
-          }
-        });
-      });
-
-      // Publish all
-      document.querySelectorAll('.publish-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const studentId = parseInt(btn.dataset.studentId);
-          publishAllResults(studentId);
-        });
-      });
-
-      // View marksheet
-      document.querySelectorAll('.view-marksheet-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const studentId = parseInt(btn.dataset.studentId);
-          viewMarksheet(studentId);
-        });
-      });
-    }
-
-    function deleteResult(resultId) {
-      let results = JSON.parse(localStorage.getItem('results') || '[]');
-      results = results.filter(r => r.id !== resultId);
-      localStorage.setItem('results', JSON.stringify(results));
-      loadResults();
-    }
-
-    function publishAllResults(studentId) {
-      let results = JSON.parse(localStorage.getItem('results') || '[]');
-      results.forEach(r => {
-        if (r.studentId === studentId && r.class === selectedClass) {
-          r.published = true;
-        }
-      });
-      localStorage.setItem('results', JSON.stringify(results));
-      loadResults();
-    }
-
-    function openEditResultModal(resultId) {
-      const results = JSON.parse(localStorage.getItem('results') || '[]');
-      const result = results.find(r => r.id === resultId);
-      if (!result) return;
-      document.getElementById('editResultId').value = resultId;
-      document.getElementById('editSubject').value = result.subject;
-      document.getElementById('editMarks').value = result.marks;
-      document.getElementById('editResultModal').classList.add('active');
-    }
-
-    function viewMarksheet(studentId) {
-      const students = JSON.parse(localStorage.getItem('students') || '[]');
-      const student = students.find(s => s.id === studentId);
-      const results = JSON.parse(localStorage.getItem('results') || '[]').filter(r => r.studentId === studentId && r.class === selectedClass);
-      if (!student || results.length === 0) return;
-
-      const total = results.reduce((sum, r) => sum + r.marks, 0);
-      const percentage = (total / (results.length * 100)) * 100;
-      const finalGrade = percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B' : percentage >= 60 ? 'C' : 'D';
-
-      let html = `
-        <div class="marksheet">
-          <h3>${student.name} - Final Marksheet</h3>
-          <p>Roll Number: ${student.rollNumber}</p>
-          <p>Class: ${student.class}</p>
-          <p>Date: ${new Date().toLocaleDateString()}</p>
-          <table>
-            <thead>
-              <tr><th>Subject</th><th>Marks</th><th>Grade</th></tr>
-            </thead>
-            <tbody>
-              ${results.map(r => {
-                const grade = r.marks >= 90 ? 'A+' : r.marks >= 80 ? 'A' : r.marks >= 70 ? 'B' : r.marks >= 60 ? 'C' : 'D';
-                return `<tr><td>${r.subject}</td><td>${r.marks}</td><td>${grade}</td></tr>`;
-              }).join('')}
-            </tbody>
-            <tfoot>
-              <tr><td>Total Marks</td><td>${total}</td><td>${finalGrade}</td></tr>
-              <tr><td>Overall Percentage</td><td>${percentage.toFixed(2)}%</td><td></td></tr>
-            </tfoot>
-          </table>
-          <button onclick="window.print()" class="btn" style="background: #3b82f6; color: white; margin-top: 16px;">Print Marksheet</button>
-        </div>
-      `;
-      document.getElementById('marksheetContent').innerHTML = html;
-      document.getElementById('marksheetModal').classList.add('active');
+      const groupedResults = groupResultsByStudent();
+      renderFinalResults(groupedResults);
     }
 
     // Add Result Button
@@ -637,20 +579,21 @@
     document.getElementById('closeBulkUploadModal').addEventListener('click', () => {
       document.getElementById('bulkUploadModal').classList.remove('active');
     });
-    document.getElementById('closeMarksheetModal').addEventListener('click', () => {
-      document.getElementById('marksheetModal').classList.remove('active');
+    document.getElementById('closeSubjectDetailsModal').addEventListener('click', () => {
+      document.getElementById('subjectDetailsModal').classList.remove('active');
     });
 
     // Add Result Form
     document.getElementById('addResultForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const studentId = parseInt(document.getElementById('resultStudent').value);
+      const exam = document.getElementById('resultExam').value.trim();
       const subject = document.getElementById('resultSubject').value.trim();
       const marks = parseInt(document.getElementById('resultMarks').value);
       
       const results = JSON.parse(localStorage.getItem('results') || '[]');
-      if (results.find(r => r.studentId === studentId && r.subject === subject && r.class === selectedClass)) {
-        alert('This student already has a result for this subject.');
+      if (results.find(r => r.studentId === studentId && r.subject === subject && r.class === selectedClass && (r.exam || "Final Exam") === exam)) {
+        alert('This student already has a result for this subject in this exam.');
         return;
       }
       
@@ -660,34 +603,12 @@
         subject,
         marks,
         class: selectedClass,
+        exam: exam,
         published: false
       });
       localStorage.setItem('results', JSON.stringify(results));
       document.getElementById('addResultModal').classList.remove('active');
       document.getElementById('addResultForm').reset();
-      loadResults();
-    });
-
-    // Edit Result Form
-    document.getElementById('editResultForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const resultId = parseInt(document.getElementById('editResultId').value);
-      const subject = document.getElementById('editSubject').value.trim();
-      const marks = parseInt(document.getElementById('editMarks').value);
-      
-      let results = JSON.parse(localStorage.getItem('results') || '[]');
-      const result = results.find(r => r.id === resultId);
-      if (result) {
-        if (result.subject !== subject && results.find(r => r.studentId === result.studentId && r.subject === subject && r.class === selectedClass)) {
-          alert('This student already has a result for this subject.');
-          return;
-        }
-        result.subject = subject;
-        result.marks = marks;
-        localStorage.setItem('results', JSON.stringify(results));
-      }
-      document.getElementById('editResultModal').classList.remove('active');
-      document.getElementById('editResultForm').reset();
       loadResults();
     });
 
@@ -707,14 +628,16 @@
         bulkData.forEach(item => {
           const student = students.find(s => s.rollNumber === item.studentRoll && s.class === item.className);
           if (!student) { alert(`Student with roll ${item.studentRoll} in ${item.className} not found`); return; }
+          const exam = item.exam || "Final Exam";
           item.subjects.forEach(sub => {
-            if (!results.find(r => r.studentId === student.id && r.subject === sub.subject && r.class === item.className)) {
+            if (!results.find(r => r.studentId === student.id && r.subject === sub.subject && r.class === item.className && (r.exam || "Final Exam") === exam)) {
               results.push({
                 id: Date.now(),
                 studentId: student.id,
                 subject: sub.subject,
                 marks: sub.marks,
                 class: item.className,
+                exam: exam,
                 published: false
               });
             }
