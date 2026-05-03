@@ -6,6 +6,8 @@ import PieChart3D from './components/PieChart3D'
 // Anime.js loaded globally from CDN
 const anime = window.anime
 
+// Version: 1.0.1 - Clean build to fix Vercel cache
+
 let dbApiPromise
 let storageApiPromise
 
